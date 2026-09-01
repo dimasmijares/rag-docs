@@ -7,6 +7,7 @@ name = "rag-docs"
 version = "0.1.0"
 description = "PoC local de RAG documental gobernada con KDD"
 readme = "README.md"
+license = "Apache-2.0"
 requires-python = ">=3.11,<3.14"
 dependencies = [
   "fastapi>=0.115,<1",
@@ -44,6 +45,7 @@ rag_docs = ["static/*"]
 
 [tool.pytest.ini_options]
 addopts = "-q"
+pythonpath = ["src"]
 testpaths = ["tests"]
 
 [tool.ruff]
