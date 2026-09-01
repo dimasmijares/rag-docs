@@ -30,7 +30,10 @@ $activeTasks = @($nodes.Values | Where-Object {
     $_.Layer -eq 'work-task' -and $_.Status -eq 'active'
 })
 if ($activeTasks.Count -gt 1) {
-    $issues.Add("Hay más de una WRK-TASK activa: $($activeTasks.Id -join ', ').")
+    $issues.Add(
+        "Hay más de una WRK-TASK activa en este checkout: " +
+        "$($activeTasks.Id -join ', ')."
+    )
 }
 
 foreach ($node in $nodes.Values | Where-Object { $_.Layer -like 'work-*' }) {
