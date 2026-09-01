@@ -26,11 +26,17 @@ tags: [benchmark, llm, embeddings, latency, memory]
 Comparar generadores 3B/14B, embeddings y fallback con métricas de calidad, p50/p95, memoria y
 configuración efectiva.
 
+## File Scope
+
+Incluye runner, configuración y resultados sintéticos de benchmark. Excluye modificar el split de
+validación, publicar resultados locales privados o adoptar hybrid/reranking.
+
 ## Acceptance Criteria
 
 - [ ] Separar latencia de embedding, retrieval, grounding y generación.
-- [ ] Comparar los modelos sobre el split de validación sin modificarlo.
-- [ ] Registrar hardware, revisión, parámetros y errores reproducibles.
+- [ ] Seleccionar modelos y parámetros exclusivamente sobre desarrollo y bloquear la decisión.
+- [ ] Ejecutar validación una sola vez como confirmación, sin modificarla tras conocer resultados.
+- [ ] Registrar runs cold/warm, hardware, revisión, parámetros, semillas, memoria y errores reproducibles.
 - [ ] Recomendar baseline local y remoto con sus límites.
 
 ## Evidence

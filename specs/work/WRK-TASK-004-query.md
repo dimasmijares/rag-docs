@@ -3,7 +3,7 @@ id: WRK-TASK-004
 type: spec
 layer: work-task
 scope: ephemeral
-status: completed
+status: archived
 confidence: medium
 version: 1.0.0
 created: 2026-08-25
@@ -29,8 +29,8 @@ Incluye retrieval, prompt, generador y política de respuesta. Excluye HTTP y we
 
 ## Acceptance Criteria
 
-- [ ] Se recuperan ocho candidatos y se entregan hasta cinco fragmentos deduplicados.
-- [ ] No puede emitirse `grounded` sin citas válidas.
+- [x] Se recuperan ocho candidatos y se entregan hasta cinco fragmentos deduplicados.
+- [x] No puede emitirse `grounded` sin citas válidas.
 
 ## Test Plan
 

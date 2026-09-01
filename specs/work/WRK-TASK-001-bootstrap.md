@@ -3,7 +3,7 @@ id: WRK-TASK-001
 type: spec
 layer: work-task
 scope: ephemeral
-status: completed
+status: archived
 confidence: medium
 version: 1.0.0
 created: 2026-08-25
@@ -29,8 +29,8 @@ Incluye metadatos raíz, `.kdd/**`, `specs/**`, configuración y scripts. Excluy
 
 ## Acceptance Criteria
 
-- [ ] El commit del framework está fijado y el grafo valida.
-- [ ] El proyecto declara Python 3.11 y dependencias separadas por uso.
+- [x] El commit del framework está fijado y el grafo valida.
+- [x] El proyecto declara Python 3.11 y dependencias separadas por uso.
 
 ## Test Plan
 

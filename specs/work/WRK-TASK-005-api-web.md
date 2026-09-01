@@ -3,7 +3,7 @@ id: WRK-TASK-005
 type: spec
 layer: work-task
 scope: ephemeral
-status: completed
+status: archived
 confidence: medium
 version: 1.0.0
 created: 2026-08-25
@@ -29,8 +29,8 @@ Incluye esquemas API, composición de dependencias, endpoints y recursos web. Ex
 
 ## Acceptance Criteria
 
-- [ ] Los tres endpoints devuelven esquemas estables y errores accionables.
-- [ ] La web consulta, indexa y muestra citas y localizadores.
+- [x] Los tres endpoints devuelven esquemas estables y errores accionables.
+- [x] La web consulta, indexa y muestra citas y localizadores.
 
 ## Test Plan
 

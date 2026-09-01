@@ -119,6 +119,7 @@ Antes de trabajar en una tarea:
 
 ```powershell
 ./scripts/kdd.ps1 validate
+./scripts/kdd.ps1 orphans
 ./scripts/kdd.ps1 context -Id WRK-TASK-003
 ```
 
