@@ -3,7 +3,7 @@ id: WRK-TASK-002
 type: spec
 layer: work-task
 scope: ephemeral
-status: completed
+status: archived
 confidence: medium
 version: 1.0.0
 created: 2026-08-25
@@ -29,8 +29,8 @@ Incluye configuración, contratos de fuente, parsers y sus pruebas. Excluye embe
 
 ## Acceptance Criteria
 
-- [ ] Descubrimiento recursivo respeta inclusión y exclusión.
-- [ ] Cada formato conserva su localizador y los errores son aislados.
+- [x] Descubrimiento recursivo respeta inclusión y exclusión.
+- [x] Cada formato conserva su localizador y los errores son aislados.
 
 ## Test Plan
 

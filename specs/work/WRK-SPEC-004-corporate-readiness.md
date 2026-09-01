@@ -37,7 +37,7 @@ seguridad, después operación corporativa, extracción de ocho servicios y desp
 
 ## Acceptance Criteria
 
-- [ ] Las releases `v0.2.0` a `v3.0.0` tienen work spec, plan, dependencias y gate explícitos.
+- [x] Las releases `v0.2.0` a `v3.0.0` tienen work spec, plan, dependencias y gate explícitos.
 - [ ] Despliegue reproducible y persistente con separación de secretos.
 - [ ] Autenticación y ACL impiden recuperar contenido no autorizado.
 - [ ] Conectores preservan identidad, versión, permisos y sincronización incremental.
@@ -45,4 +45,5 @@ seguridad, después operación corporativa, extracción de ocho servicios y desp
 
 ## Evidence
 
-Roadmap aprobado en `RFC-002`; ejecución pendiente de `WRK-PLAN-004`.
+- Roadmap aprobado en `RFC-002`; ejecución pendiente de `WRK-PLAN-004`.
+- `WRK-TASK-023` validó los work specs, planes, dependencias y gates de `v0.2.0` a `v3.0.0`.
