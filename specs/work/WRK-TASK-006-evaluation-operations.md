@@ -3,7 +3,7 @@ id: WRK-TASK-006
 type: spec
 layer: work-task
 scope: ephemeral
-status: completed
+status: archived
 confidence: medium
 version: 1.0.0
 created: 2026-08-25

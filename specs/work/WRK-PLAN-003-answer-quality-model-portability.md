@@ -3,7 +3,7 @@ id: WRK-PLAN-003
 type: spec
 layer: work-plan
 scope: ephemeral
-status: completed
+status: archived
 confidence: medium
 version: 1.0.0
 created: 2026-08-30

@@ -3,7 +3,7 @@ id: WRK-TASK-003
 type: spec
 layer: work-task
 scope: ephemeral
-status: completed
+status: archived
 confidence: medium
 version: 1.0.0
 created: 2026-08-25
@@ -29,8 +29,8 @@ Incluye chunking, adaptador de embeddings, vector store y servicio de indexació
 
 ## Acceptance Criteria
 
-- [ ] Los IDs son deterministas y una segunda indexación sin cambios no recalcula.
-- [ ] Cambios y borrados sustituyen o eliminan todos los chunks del documento.
+- [x] Los IDs son deterministas y una segunda indexación sin cambios no recalcula.
+- [x] Cambios y borrados sustituyen o eliminan todos los chunks del documento.
 
 ## Test Plan
 

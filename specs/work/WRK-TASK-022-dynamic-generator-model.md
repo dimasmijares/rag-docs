@@ -3,9 +3,9 @@ id: WRK-TASK-022
 type: spec
 layer: work-task
 scope: ephemeral
-status: completed
+status: archived
 confidence: medium
-version: 0.2.0
+version: 1.0.0
 created: 2026-08-31
 updated: 2026-08-31
 owner: rag-docs-team
