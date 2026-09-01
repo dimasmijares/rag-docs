@@ -9,9 +9,9 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Push-Location $projectRoot
 try {
-    uv run ruff check .
+    uv run --no-sync ruff check .
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-    uv run pytest
+    uv run --no-sync pytest
     exit $LASTEXITCODE
 }
 finally {
