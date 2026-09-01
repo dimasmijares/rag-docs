@@ -87,9 +87,9 @@ idioma y si intervino el LLM o el fallback extractivo.
 ## Ollama en otro PC
 
 El generador se puede mover a otro equipo sin copiar Qdrant, documentos, embeddings ni la
-aplicación. El paquete [ollama-remote-setup.zip](ollama-remote-setup.zip) configura el servidor
-Windows y una regla de firewall limitada al portátil. Los perfiles autorizados se declaran en
-`.env`:
+aplicación. Los scripts de [transfer/ollama-remote](transfer/ollama-remote) ayudan a configurar el
+servidor Windows y una regla de firewall limitada al portátil; el ZIP de transferencia se genera
+localmente y no se versiona. Los perfiles autorizados se declaran en `.env`:
 
 ```dotenv
 RAG_DOCS_OLLAMA_ACTIVE_PROFILE=local
@@ -130,6 +130,9 @@ Puerta completa:
 
 Los specs viven en `specs/`. Las decisiones nuevas se registran como ADR; cambios transversales requieren RFC. Al cerrar un trabajo se actualizan evidencia, trazabilidad y confianza.
 
+El roadmap completo desde la PoC hasta los ocho servicios en Kubernetes está gobernado por
+`WRK-SPEC-004` y sus planes de release `WRK-PLAN-005` a `011`.
+
 ## Evaluación
 
 Con API, Qdrant, Ollama e índice activos:
@@ -148,3 +151,7 @@ registra latencia por caso, p50/p95 y errores. No usa otro LLM como juez.
 - **Primera consulta lenta**: la primera indexación descarga/carga el modelo de embeddings; la generación en CPU también puede tardar.
 - **Fuente no disponible**: revisa la ruta resuelta mostrada por `GET /api/sources`.
 - **Umbral demasiado estricto**: ajusta `RAG_DOCS_MIN_SCORE` usando primero los resultados del gold set.
+
+## Licencia
+
+Este proyecto se distribuye bajo [Apache License 2.0](LICENSE).
