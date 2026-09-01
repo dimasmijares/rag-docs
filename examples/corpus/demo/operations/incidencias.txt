@@ -1,4 +1,6 @@
 RUNBOOK DE INCIDENCIAS
 
-Si ETL_CLIENTES_DIARIA falla, revisar primero la conexión CRM_ORACLE y después el fichero de rechazo en \\operaciones\rechazos\clientes.
-El equipo DataOps es responsable de la primera intervención.
+Si ETL_CLIENTES_DIARIA falla, revisar primero la conexión CRM_ORACLE y después el fichero
+de rechazo en /operaciones/rechazos/clientes.
+El equipo DataOps atiende la primera intervención; Plataforma de Datos recibe la escalada.
+El código de diagnóstico para un timeout de origen es SRC_TIMEOUT_17.

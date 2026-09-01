@@ -1,0 +1,199 @@
+schema_version: "1.0"
+corpus_version: "0.2.0"
+split: dev
+cases:
+  - id: dev-etl-target
+    category: single_hop
+    question: "¿Qué tabla carga ETL_CLIENTES_DIARIA?"
+    expected_status: grounded
+    expected_language: es
+    target_fact_ids: [dev.client.target]
+    required_facts: [CLIENTE_MAESTRO]
+    expected_documents: [etl/catalogo-etl.md]
+    expected_any_documents: []
+    expected_locators:
+      - document: etl/catalogo-etl.md
+        section: ETL_CLIENTES_DIARIA
+  - id: dev-etl-time
+    category: single_hop
+    question: "What time does ETL_CLIENTES_DIARIA run?"
+    expected_status: grounded
+    expected_language: en
+    target_fact_ids: [dev.client.time]
+    required_facts: ["02:00"]
+    expected_documents: [etl/catalogo-etl.md]
+    expected_any_documents: []
+    expected_locators:
+      - document: etl/catalogo-etl.md
+        section: ETL_CLIENTES_DIARIA
+  - id: dev-etl-path
+    category: single_hop
+    question: "¿Dónde está la definición técnica de ETL_CLIENTES_DIARIA?"
+    expected_status: grounded
+    expected_language: es
+    target_fact_ids: [dev.client.path]
+    required_facts: [procesos/clientes/etl_clientes_diaria]
+    expected_documents: [etl/catalogo-etl.md]
+    expected_any_documents: []
+    expected_locators:
+      - document: etl/catalogo-etl.md
+        section: ETL_CLIENTES_DIARIA
+  - id: dev-orchestrator-name
+    category: single_hop
+    question: "¿Qué orquestador controla las dependencias de las ETL nocturnas?"
+    expected_status: grounded
+    expected_language: es
+    target_fact_ids: [dev.orchestrator.name]
+    required_facts: [ORQ_DATAOPS]
+    expected_documents: [components/orquestador.docx]
+    expected_any_documents: []
+    expected_locators:
+      - document: components/orquestador.docx
+        section: Orquestador de cargas
+  - id: dev-monitor-panel
+    category: single_hop
+    question: "Where are nightly ETL executions monitored?"
+    expected_status: grounded
+    expected_language: en
+    target_fact_ids: [dev.monitor.panel]
+    required_facts: [CONTROL_M]
+    expected_documents: [components/orquestador.docx]
+    expected_any_documents: []
+    expected_locators:
+      - document: components/orquestador.docx
+        section: Monitorización
+  - id: dev-alert-channel
+    category: single_hop
+    question: "¿Qué canal recibe las alertas críticas del orquestador?"
+    expected_status: grounded
+    expected_language: es
+    target_fact_ids: [dev.alert.channel]
+    required_facts: [DATAOPS_GUARDIA]
+    expected_documents: [components/orquestador.docx]
+    expected_any_documents: []
+    expected_locators:
+      - document: components/orquestador.docx
+        section: Monitorización
+        locator: {table: 1}
+  - id: dev-client-owner
+    category: single_hop
+    question: "¿Qué equipo es responsable de ETL_CLIENTES_DIARIA según el inventario?"
+    expected_status: grounded
+    expected_language: es
+    target_fact_ids: [dev.client.owner]
+    required_facts: [DataOps]
+    expected_documents: [inventory/inventario-procesos.xlsx]
+    expected_any_documents: []
+    expected_locators:
+      - document: inventory/inventario-procesos.xlsx
+        section: Procesos
+        locator: {sheet: Procesos, cell_range: "A1:C4"}
+  - id: dev-contract-sla
+    category: single_hop
+    question: "¿Cuál es el SLA de ETL_CONTRATOS_SEMANAL?"
+    expected_status: grounded
+    expected_language: es
+    target_fact_ids: [dev.contract.sla]
+    required_facts: ["Lunes 06:00"]
+    expected_documents: [inventory/inventario-procesos.xlsx]
+    expected_any_documents: []
+    expected_locators:
+      - document: inventory/inventario-procesos.xlsx
+        section: Procesos
+        locator: {sheet: Procesos, cell_range: "A1:C4"}
+  - id: dev-flow-output
+    category: single_hop
+    question: "¿Cuál es la salida de ETL_CLIENTES_DIARIA en el flujo de datos?"
+    expected_status: grounded
+    expected_language: es
+    target_fact_ids: [dev.flow.output]
+    required_facts: [CLIENTE_MAESTRO]
+    expected_documents: [architecture/flujo-datos.pptx]
+    expected_any_documents: []
+    expected_locators:
+      - document: architecture/flujo-datos.pptx
+        section: Flujo de datos de clientes
+        locator: {slide: 1}
+  - id: dev-publication-control
+    category: single_hop
+    question: "¿Qué control compara los recuentos antes de publicar?"
+    expected_status: grounded
+    expected_language: es
+    target_fact_ids: [dev.publication.control]
+    required_facts: [PUB_CLIENTES_21]
+    expected_documents: [architecture/flujo-datos.pptx]
+    expected_any_documents: []
+    expected_locators:
+      - document: architecture/flujo-datos.pptx
+        section: Controles de publicación
+        locator: {slide: 2}
+  - id: dev-incident-first-check
+    category: single_hop
+    question: "¿Qué conexión se revisa primero si falla la carga diaria de clientes?"
+    expected_status: grounded
+    expected_language: es
+    target_fact_ids: [dev.incident.first_check]
+    required_facts: [CRM_ORACLE]
+    expected_documents: [operations/incidencias.txt]
+    expected_any_documents: []
+    expected_locators:
+      - document: operations/incidencias.txt
+  - id: dev-recovery-command
+    category: compound
+    question: "¿Desde qué panel se reintenta la carga y qué sistema debe validarse antes?"
+    expected_status: grounded
+    expected_language: es
+    target_fact_ids: [dev.recovery.panel, dev.recovery.prerequisite]
+    required_facts: [CONTROL_M, CRM_ORACLE]
+    expected_documents: [runbooks/recuperacion-clientes.pdf]
+    expected_any_documents: []
+    expected_locators:
+      - document: runbooks/recuperacion-clientes.pdf
+        locator: {page: 1}
+  - id: dev-client-flow-equivalent
+    category: compound
+    question: "¿Qué ETL conecta el CRM con la tabla maestra y cuál es esa tabla?"
+    expected_status: grounded
+    expected_language: es
+    target_fact_ids: [dev.flow.job, dev.flow.table]
+    required_facts: [ETL_CLIENTES_DIARIA, CLIENTE_MAESTRO]
+    expected_documents: []
+    expected_any_documents: [etl/catalogo-etl.md, architecture/flujo-datos.pptx]
+    expected_locators:
+      - document: etl/catalogo-etl.md
+        section: ETL_CLIENTES_DIARIA
+      - document: architecture/flujo-datos.pptx
+        section: Flujo de datos de clientes
+        locator: {slide: 1}
+    equivalence_group: eq-dev-client-flow
+  - id: dev-incident-response
+    category: compound
+    question: "Si falla ETL_CLIENTES_DIARIA, ¿qué se comprueba primero y quién interviene?"
+    expected_status: grounded
+    expected_language: es
+    target_fact_ids: [dev.incident.check, dev.incident.team]
+    required_facts: [CRM_ORACLE, DataOps]
+    expected_documents: [operations/incidencias.txt]
+    expected_any_documents: []
+    expected_locators:
+      - document: operations/incidencias.txt
+  - id: dev-negative-vacations
+    category: negative
+    question: "¿Cuál es la política de vacaciones de la empresa?"
+    expected_status: insufficient_evidence
+    expected_language: es
+    target_fact_ids: []
+    required_facts: []
+    expected_documents: []
+    expected_any_documents: []
+    expected_locators: []
+  - id: dev-negative-payroll
+    category: negative
+    question: "¿Qué día se abona la nómina mensual?"
+    expected_status: insufficient_evidence
+    expected_language: es
+    target_fact_ids: []
+    required_facts: []
+    expected_documents: []
+    expected_any_documents: []
+    expected_locators: []

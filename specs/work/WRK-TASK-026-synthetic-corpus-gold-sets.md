@@ -3,7 +3,7 @@ id: WRK-TASK-026
 type: spec
 layer: work-task
 scope: ephemeral
-status: draft
+status: active
 confidence: medium
 version: 0.2.0
 created: 2026-09-01
@@ -89,17 +89,17 @@ ejecución no deja diferencias en Git.
 
 ## Acceptance Criteria
 
-- [ ] Los gold sets cumplen el esquema versionado y la matriz mínima de 16 casos de desarrollo y
+- [x] Los gold sets cumplen el esquema versionado y la matriz mínima de 16 casos de desarrollo y
   8 de validación.
-- [ ] Los splits no comparten IDs, preguntas normalizadas, hechos objetivo, grupos equivalentes ni
+- [x] Los splits no comparten IDs, preguntas normalizadas, hechos objetivo, grupos equivalentes ni
   referencias privadas; Evidence confirma revisión semántica de paráfrasis.
-- [ ] Hay casos single-hop, compuestos, multilingües, negativos y dos grupos documentales
+- [x] Hay casos single-hop, compuestos, multilingües, negativos y dos grupos documentales
   equivalentes aislados entre splits.
-- [ ] PDF, DOCX, PPTX, XLSX, TXT y Markdown, junto con sus paths y localizadores soportados, quedan
+- [x] PDF, DOCX, PPTX, XLSX, TXT y Markdown, junto con sus paths y localizadores soportados, quedan
   representados en ambos splits.
-- [ ] El manifiesto SHA-256 versionado y dos generaciones en directorios independientes producen
+- [x] El manifiesto SHA-256 versionado y dos generaciones en directorios independientes producen
   exactamente los mismos paths y bytes, y la regeneración canónica no ensucia Git.
-- [ ] `gold-set.yaml` permanece como smoke set compatible hasta la consolidación de `v0.2.0`.
+- [x] `gold-set.yaml` permanece como smoke set compatible hasta la consolidación de `v0.2.0`.
 
 ## Suggested Agentic Decomposition
 
@@ -110,4 +110,22 @@ integración final.
 
 ## Evidence
 
-Pendiente.
+- El corpus `0.2.0` contiene doce fixtures sintéticos: un juego de desarrollo y otro ATLAS de
+  validación, ambos con PDF, DOCX, PPTX, XLSX, TXT y Markdown. El manifiesto `schema_version: 1.0`
+  enumera sus doce SHA-256 en orden y excluye el propio manifiesto.
+- `gold-set.dev.yaml` aporta 16 casos y `gold-set.validation.yaml`, 8. Las pruebas validan esquema,
+  mínimos por categoría e idioma, paths permitidos, los seis formatos, localizadores extraídos y
+  aislamiento de IDs, preguntas normalizadas, hechos objetivo y grupos equivalentes.
+- La revisión semántica confirmó que no hay paráfrasis equivalentes entre splits: desarrollo usa
+  únicamente el dominio de ETL de clientes y validación el dominio ATLAS. Las equivalencias
+  deliberadas `eq-dev-client-flow` y `eq-val-atlas-restore` permanecen dentro de su split.
+- El generador acepta `--output-dir` y `--check`, fija propiedades y timestamps, normaliza miembros
+  OOXML y saltos de línea, y usa una allowlist de fixtures. Dos directorios temporales producen los
+  mismos 13 paths y bytes; `--check` confirma que el árbol canónico coincide.
+- La QA visual inspeccionó las cuatro diapositivas, las cuatro páginas PDF y las tres hojas XLSX;
+  se corrigieron anchos truncados y los decks superaron el detector de overflow. LibreOffice no
+  estaba disponible para rasterizar DOCX, por lo que se aplicó el fallback estructural: ambos DOCX
+  abren y sus secciones/tablas se validan mediante los extractores automatizados.
+- Gates locales: 42 tests, Ruff, `git diff --check` y seguridad pública sobre 201 candidatos en
+  verde; KDD validó 125 specs y 863 relaciones, cero huérfanos, contexto coherente y lifecycle
+  válido. `gold-set.yaml` conserva sus cuatro casos smoke y no se modificó `src/**`.

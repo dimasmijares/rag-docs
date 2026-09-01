@@ -1,0 +1,3 @@
+GUARDIA DE ATLAS
+
+La guardia revisa primero METRIC_LAG_42. Tras 15 minutos escala a DATA_RELIABILITY.
