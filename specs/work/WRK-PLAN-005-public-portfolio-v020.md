@@ -29,7 +29,7 @@ modelos antes de publicar la baseline.
 | 1 | WRK-TASK-023 | completed | 022 | Roadmap KDD completo |
 | 2 | WRK-TASK-024 | completed | 023 | Saneamiento público |
 | 3 | WRK-TASK-025 | completed | 024 | Licencia, GitHub y rama `main` |
-| 4 | WRK-TASK-079 | active | 025 | Lifecycle y protocolo KDD |
+| 4 | WRK-TASK-079 | completed | 025 | Lifecycle y protocolo KDD |
 | 5 | WRK-TASK-028 | draft | 025, 079 | CI y gates de seguridad |
 | 6 | WRK-TASK-026 | draft | 024, 079 | Corpus y gold sets sintéticos |
 | 7 | WRK-TASK-012 | draft | 009, 023, 026, 079 | Métricas de retrieval |
@@ -41,4 +41,4 @@ modelos antes de publicar la baseline.
 - `WRK-TASK-023` consolidó el roadmap corporativo y validó el DAG completo.
 - `WRK-TASK-024` superó el gate público sin versionar documentos o derivados privados.
 - `WRK-TASK-025` publicó el repositorio Apache-2.0, protegió `main` y fusionó la PR inicial.
-- `WRK-TASK-079` normaliza lifecycle y Definition of Ready antes de continuar el release.
+- `WRK-TASK-079` normalizó lifecycle y Definition of Ready; `028` y `026` quedan desbloqueadas.
