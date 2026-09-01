@@ -1,0 +1,24 @@
+cases:
+  - id: etl-clientes
+    question: "¿Qué ETL carga la tabla maestra de clientes?"
+    expected_status: grounded
+    expected_documents: ["etl/catalogo-etl.md"]
+    expected_language: es
+    required_facts: ["ETL_CLIENTES_DIARIA"]
+  - id: ruta-etl-clientes
+    question: "¿Dónde está definida técnicamente ETL_CLIENTES_DIARIA?"
+    expected_status: grounded
+    expected_documents: ["etl/catalogo-etl.md"]
+    expected_language: es
+    required_facts: ["procesos/clientes/etl_clientes_diaria"]
+  - id: incidencia-clientes
+    question: "¿Qué se revisa primero si falla la carga diaria de clientes?"
+    expected_status: grounded
+    expected_documents: ["operations/incidencias.txt"]
+    expected_language: es
+    required_facts: ["CRM_ORACLE"]
+  - id: fuera-de-corpus
+    question: "¿Cuál es la política de vacaciones de la empresa?"
+    expected_status: insufficient_evidence
+    expected_documents: []
+    expected_language: es
