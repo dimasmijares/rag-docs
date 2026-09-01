@@ -20,6 +20,7 @@ artifacts/private/
 _build/
 .idea/
 .vscode/
+.kdd/
 examples/corporate/*
 !examples/corporate/.gitkeep
 *.log

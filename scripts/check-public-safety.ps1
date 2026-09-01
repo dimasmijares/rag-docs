@@ -1,17 +1,24 @@
 [CmdletBinding()]
-param()
+param(
+    [string[]]$Paths
+)
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 
 Push-Location $projectRoot
 try {
-    $candidateFiles = @(
-        git ls-files --cached --others --exclude-standard |
-            Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
-    )
-    if ($LASTEXITCODE -ne 0) {
-        throw 'No se pudo obtener la lista de archivos candidatos a Git.'
+    if ($PSBoundParameters.ContainsKey('Paths')) {
+        $candidateFiles = @($Paths | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    }
+    else {
+        $candidateFiles = @(
+            git ls-files --cached --others --exclude-standard |
+                Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+        )
+        if ($LASTEXITCODE -ne 0) {
+            throw 'No se pudo obtener la lista de archivos candidatos a Git.'
+        }
     }
 
     $violations = [System.Collections.Generic.List[string]]::new()
