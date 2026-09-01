@@ -32,7 +32,7 @@ modelos antes de publicar la baseline.
 | 4 | WRK-TASK-079 | completed | 025 | Lifecycle y protocolo KDD |
 | 5 | WRK-TASK-028 | completed | 025, 079 | CI y gates de seguridad |
 | 6 | WRK-TASK-080 | completed | 079, 028 | Orquestación agentic y DoR de 026 |
-| 7 | WRK-TASK-026 | active | 024, 079, 080 | Corpus y gold sets sintéticos |
+| 7 | WRK-TASK-026 | completed | 024, 079, 080 | Corpus y gold sets sintéticos |
 | 8 | WRK-TASK-012 | draft | 009, 023, 026, 079 | Métricas de retrieval |
 | 9 | WRK-TASK-027 | draft | 012, 026 | Benchmark de modelos y recursos |
 | 10 | WRK-TASK-029 | draft | 027, 028 | Documentación y release `v0.2.0` |
@@ -46,3 +46,5 @@ modelos antes de publicar la baseline.
   gates remotos.
 - `WRK-TASK-080` hizo persistente la orquestación agentic y dejó `WRK-TASK-026` preparada para
   ejecutarse desde una sesión nueva.
+- `WRK-TASK-026` publicó corpus multiformato determinista y gold sets dev/validation aislados,
+  con manifiesto SHA-256, localizadores verificados y gates locales/remotos verdes.

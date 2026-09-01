@@ -3,9 +3,9 @@ id: WRK-TASK-026
 type: spec
 layer: work-task
 scope: ephemeral
-status: active
+status: completed
 confidence: medium
-version: 0.2.0
+version: 1.0.0
 created: 2026-09-01
 updated: 2026-09-01
 owner: rag-docs-team
@@ -129,3 +129,5 @@ integración final.
 - Gates locales: 42 tests, Ruff, `git diff --check` y seguridad pública sobre 201 candidatos en
   verde; KDD validó 125 specs y 863 relaciones, cero huérfanos, contexto coherente y lifecycle
   válido. `gold-set.yaml` conserva sus cuatro casos smoke y no se modificó `src/**`.
+- La PR `#5` superó `kdd`, `python-quality`, `public-safety`, `dependency-review` y `secret-scan`
+  en el run `33553848668` antes del cierre de lifecycle.
