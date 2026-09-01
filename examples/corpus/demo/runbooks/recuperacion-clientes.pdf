@@ -3,13 +3,17 @@
 1 0 obj
 <<
 /Producer (pypdf)
+/Title (Runbook sint\351tico de recuperaci\363n)
+/Author (rag\055docs\055team)
+/CreationDate (D\07220260101000000Z)
+/ModDate (D\07220260101000000Z)
 >>
 endobj
 2 0 obj
 <<
 /Type /Pages
-/Count 1
-/Kids [ 4 0 R ]
+/Count 2
+/Kids [ 4 0 R 7 0 R ]
 >>
 endobj
 3 0 obj
@@ -40,27 +44,58 @@ endobj
 endobj
 6 0 obj
 <<
-/Length 104
+/Length 102
 >>
 stream
-BT /F1 12 Tf 72 720 Td (Runbook ETL clientes: reintentar desde CONTROL_M tras validar CRM_ORACLE.) Tj ET
+BT /F1 12 Tf 72 720 Td (Reintentar ETL_CLIENTES_DIARIA desde CONTROL_M tras validar CRM_ORACLE.) Tj ET
+endstream
+endobj
+7 0 obj
+<<
+/Type /Page
+/Resources <<
+/Font <<
+/F1 8 0 R
+>>
+>>
+/MediaBox [ 0.0 0.0 612 792 ]
+/Parent 2 0 R
+/Contents 9 0 R
+>>
+endobj
+8 0 obj
+<<
+/Type /Font
+/Subtype /Type1
+/BaseFont /Helvetica
+>>
+endobj
+9 0 obj
+<<
+/Length 106
+>>
+stream
+BT /F1 12 Tf 72 720 Td (La comprobacion posterior se ejecuta a las 04:30 y registra RECOVERY_OK_42.) Tj ET
 endstream
 endobj
 xref
-0 7
+0 10
 0000000000 65535 f 
 0000000015 00000 n 
-0000000054 00000 n 
-0000000113 00000 n 
-0000000162 00000 n 
-0000000294 00000 n 
-0000000364 00000 n 
+0000000202 00000 n 
+0000000267 00000 n 
+0000000316 00000 n 
+0000000448 00000 n 
+0000000518 00000 n 
+0000000671 00000 n 
+0000000803 00000 n 
+0000000873 00000 n 
 trailer
 <<
-/Size 7
+/Size 10
 /Root 3 0 R
 /Info 1 0 R
 >>
 startxref
-519
+1030
 %%EOF

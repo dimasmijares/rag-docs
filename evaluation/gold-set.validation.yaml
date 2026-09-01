@@ -1,0 +1,103 @@
+schema_version: "1.0"
+corpus_version: "0.2.0"
+split: validation
+cases:
+  - id: val-atlas-restore-equivalent
+    category: single_hop
+    question: "¿Qué instantánea se usa para restaurar ATLAS_LEDGER?"
+    expected_status: grounded
+    expected_language: es
+    target_fact_ids: [val.restore.snapshot]
+    required_facts: [SNAPSHOT_BLUE]
+    expected_documents: []
+    expected_any_documents: [continuity/atlas-guide.md, continuity/atlas-procedure.docx]
+    expected_locators:
+      - document: continuity/atlas-guide.md
+        section: Restauración Atlas
+      - document: continuity/atlas-procedure.docx
+        section: Restauración Atlas
+    equivalence_group: eq-val-atlas-restore
+  - id: val-atlas-route-target
+    category: single_hop
+    question: "Which curated store receives the Atlas route output?"
+    expected_status: grounded
+    expected_language: en
+    target_fact_ids: [val.route.target]
+    required_facts: [LEDGER_CURATED]
+    expected_documents: [architecture/atlas-routing.pptx]
+    expected_any_documents: []
+    expected_locators:
+      - document: architecture/atlas-routing.pptx
+        section: Ruta Atlas
+        locator: {slide: 1}
+  - id: val-atlas-gateway-slo
+    category: single_hop
+    question: "¿Cuál es el SLO de ATLAS_GATEWAY?"
+    expected_status: grounded
+    expected_language: es
+    target_fact_ids: [val.gateway.slo]
+    required_facts: ["99.95%"]
+    expected_documents: [inventory/atlas-services.xlsx]
+    expected_any_documents: []
+    expected_locators:
+      - document: inventory/atlas-services.xlsx
+        section: Servicios
+        locator: {sheet: Servicios, cell_range: "A1:C3"}
+  - id: val-atlas-oncall-first-check
+    category: single_hop
+    question: "¿Qué métrica revisa primero la guardia de Atlas?"
+    expected_status: grounded
+    expected_language: es
+    target_fact_ids: [val.oncall.metric]
+    required_facts: [METRIC_LAG_42]
+    expected_documents: [operations/atlas-oncall.txt]
+    expected_any_documents: []
+    expected_locators:
+      - document: operations/atlas-oncall.txt
+  - id: val-atlas-rollback-sequence
+    category: compound
+    question: "¿Qué escritor se pausa y qué comprobación permite reanudarlo?"
+    expected_status: grounded
+    expected_language: es
+    target_fact_ids: [val.rollback.writer, val.resume.check]
+    required_facts: [ATLAS_WRITER, CHECKSUM_GREEN]
+    expected_documents: [runbooks/atlas-rollback.pdf]
+    expected_any_documents: []
+    expected_locators:
+      - document: runbooks/atlas-rollback.pdf
+        locator: {page: 1}
+      - document: runbooks/atlas-rollback.pdf
+        locator: {page: 2}
+  - id: val-atlas-service-operation
+    category: compound
+    question: "¿Quién opera la ruta Atlas y cuál es su SLA?"
+    expected_status: grounded
+    expected_language: es
+    target_fact_ids: [val.route.owner, val.route.sla]
+    required_facts: [PlatformOps, "12 minutos"]
+    expected_documents: [architecture/atlas-routing.pptx]
+    expected_any_documents: []
+    expected_locators:
+      - document: architecture/atlas-routing.pptx
+        section: Servicio Atlas
+        locator: {slide: 2}
+  - id: val-negative-benefits
+    category: negative
+    question: "¿Qué seguro médico ofrece la organización?"
+    expected_status: insufficient_evidence
+    expected_language: es
+    target_fact_ids: []
+    required_facts: []
+    expected_documents: []
+    expected_any_documents: []
+    expected_locators: []
+  - id: val-negative-office
+    category: negative
+    question: "¿En qué ciudad está la sede corporativa?"
+    expected_status: insufficient_evidence
+    expected_language: es
+    target_fact_ids: []
+    required_facts: []
+    expected_documents: []
+    expected_any_documents: []
+    expected_locators: []
