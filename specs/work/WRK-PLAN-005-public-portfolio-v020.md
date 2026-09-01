@@ -30,7 +30,7 @@ modelos antes de publicar la baseline.
 | 2 | WRK-TASK-024 | completed | 023 | Saneamiento público |
 | 3 | WRK-TASK-025 | completed | 024 | Licencia, GitHub y rama `main` |
 | 4 | WRK-TASK-079 | completed | 025 | Lifecycle y protocolo KDD |
-| 5 | WRK-TASK-028 | draft | 025, 079 | CI y gates de seguridad |
+| 5 | WRK-TASK-028 | completed | 025, 079 | CI y gates de seguridad |
 | 6 | WRK-TASK-026 | draft | 024, 079 | Corpus y gold sets sintéticos |
 | 7 | WRK-TASK-012 | draft | 009, 023, 026, 079 | Métricas de retrieval |
 | 8 | WRK-TASK-027 | draft | 012, 026 | Benchmark de modelos y recursos |

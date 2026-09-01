@@ -1,4 +1,0 @@
-[submodule ".kdd/framework"]
-	path = .kdd/framework
-	url = https://github.com/jmbruzos/knowledge-driven-development.git
-	branch = main

@@ -5,18 +5,20 @@ param(
 )
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$cli = Join-Path $projectRoot '.kdd/framework/apps/spec-graph/spec-graph.mjs'
+$cli = Join-Path $PSScriptRoot 'kdd_graph.py'
 $specs = Join-Path $projectRoot 'specs'
 
 if (-not (Test-Path -LiteralPath $cli)) {
-    throw 'Falta el submódulo KDD. Ejecuta: git submodule update --init --recursive'
+    throw 'Falta el CLI KDD local en scripts/kdd_graph.py.'
 }
 
 if ($Command -in @('context', 'impact') -and [string]::IsNullOrWhiteSpace($Id)) {
     throw "El comando $Command requiere -Id."
 }
 
-$arguments = @($cli, '--specs', $specs, $Command)
+$arguments = @('run', '--no-sync', 'python', $cli, '--specs', $specs, $Command)
 if ($Id) { $arguments += $Id }
-& node @arguments
-exit $LASTEXITCODE
+& uv @arguments
+if ($LASTEXITCODE -ne 0) {
+    throw "El comando KDD '$Command' falló con código $LASTEXITCODE."
+}
