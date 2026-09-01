@@ -1,0 +1,6 @@
+sources:
+  - id: demo
+    type: local_folder
+    root: /documents/demo
+    include: ["**/*.pdf", "**/*.docx", "**/*.pptx", "**/*.xlsx", "**/*.txt", "**/*.md"]
+    exclude: ["**/~$*", "**/.*/**"]

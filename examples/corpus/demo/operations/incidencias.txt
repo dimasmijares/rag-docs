@@ -1,0 +1,4 @@
+RUNBOOK DE INCIDENCIAS
+
+Si ETL_CLIENTES_DIARIA falla, revisar primero la conexión CRM_ORACLE y después el fichero de rechazo en \\operaciones\rechazos\clientes.
+El equipo DataOps es responsable de la primera intervención.

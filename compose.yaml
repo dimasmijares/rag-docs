@@ -1,0 +1,30 @@
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.12.6
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  app:
+    profiles: ["full"]
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - qdrant
+    environment:
+      RAG_DOCS_SOURCES_FILE: /app/config/sources.container.yaml
+      RAG_DOCS_QDRANT_URL: http://qdrant:6333
+      RAG_DOCS_OLLAMA_URL: http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./examples/corpus/demo:/documents/demo:ro
+      - model_cache:/root/.cache/huggingface
+
+volumes:
+  qdrant_data:
+  model_cache:

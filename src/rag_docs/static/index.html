@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>rag-docs</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <p class="eyebrow">RAG DOCUMENTAL · LOCAL-FIRST</p>
+          <h1>Pregunta a tu documentación</h1>
+          <p class="subtitle">Respuestas limitadas a la evidencia indexada, con rutas y localizadores.</p>
+        </div>
+        <button id="index-button" class="secondary">Indexar fuentes</button>
+      </header>
+
+      <section class="panel generator-panel" aria-labelledby="generator-title">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">MODELO DE RESPUESTA</p>
+            <h2 id="generator-title">Configuración del generador</h2>
+          </div>
+          <span id="generator-active" class="badge">Cargando…</span>
+        </div>
+        <div class="generator-controls">
+          <div>
+            <label for="generator-profile">Entorno</label>
+            <select id="generator-profile"></select>
+          </div>
+          <div class="generator-details" aria-live="polite">
+            <div><span>Endpoint</span><strong id="generator-endpoint">—</strong></div>
+            <div>
+              <label for="generator-model">Modelo</label>
+              <select id="generator-model" disabled>
+                <option>—</option>
+              </select>
+            </div>
+            <div><span>Comprobación</span><strong id="generator-health">Sin comprobar</strong></div>
+          </div>
+        </div>
+        <div class="actions generator-actions">
+          <p class="help-text">Pulsa Comprobar para descubrir los modelos instalados. El cambio se aplica a las consultas siguientes y no requiere reindexar. Al reiniciar se recupera la configuración predeterminada del entorno.</p>
+          <div class="button-group">
+            <button id="generator-check-button" class="secondary">Comprobar</button>
+            <button id="generator-activate-button">Usar esta configuración</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel query-panel">
+        <label for="question">Pregunta</label>
+        <textarea id="question" rows="4" placeholder="¿Qué ETL carga la tabla de clientes?"></textarea>
+        <div class="actions">
+          <span id="status" role="status">Preparado</span>
+          <button id="query-button">Consultar</button>
+        </div>
+      </section>
+
+      <section id="result" class="panel result-panel" hidden>
+        <div class="result-heading">
+          <h2>Respuesta</h2>
+          <span id="answer-status" class="badge"></span>
+        </div>
+        <div id="answer" class="answer"></div>
+        <h3>Fuentes</h3>
+        <div id="citations" class="citations"></div>
+      </section>
+
+      <section class="panel sources-panel">
+        <h2>Fuentes configuradas</h2>
+        <div id="sources"></div>
+      </section>
+    </main>
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>

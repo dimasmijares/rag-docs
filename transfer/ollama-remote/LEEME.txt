@@ -1,0 +1,32 @@
+PAQUETE DE CONFIGURACION DE OLLAMA REMOTO PARA RAG-DOCS
+=======================================================
+
+No necesitas clonar el repositorio en el PC personal.
+
+1. En el portatil, abre PowerShell y ejecuta ipconfig. Anota su IPv4.
+2. Transfiere esta carpeta o el ZIP al PC personal y descomprimelo.
+3. Si Ollama no esta instalado, descargalo desde:
+   https://ollama.com/download/windows
+4. Haz doble clic en EJECUTAR-EN-PC-PERSONAL.cmd.
+5. Introduce la IPv4 del portatil cuando se solicite y acepta el aviso de administrador.
+6. Al terminar, cierra Ollama desde la bandeja y vuelve a abrirlo desde Inicio.
+7. Anota la IPv4 que muestre el script para el PC personal.
+8. Copia probar-desde-portatil.ps1 al portatil y ejecutalo con boton derecho >
+   Ejecutar con PowerShell. Introduce la IPv4 del PC personal.
+
+SEGURIDAD
+---------
+
+- La regla de firewall se limita a la IPv4 del portatil y al perfil de red Privada.
+- No abras el puerto 11434 en el router ni lo expongas a Internet.
+- La conexion local usa HTTP sin cifrar.
+- Prueba inicialmente con el corpus didactico. Los fragmentos recuperados y la pregunta
+  se envian al PC que ejecuta el modelo; no uses documentacion corporativa sin permiso.
+
+QUE CONFIGURA
+-------------
+
+- Descarga o verifica qwen2.5:3b.
+- Configura OLLAMA_HOST=0.0.0.0:11434 para el usuario.
+- Crea una regla de Windows Firewall restringida al portatil.
+- No instala rag-docs, Python, Qdrant ni Docker en el PC personal.
