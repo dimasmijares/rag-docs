@@ -34,6 +34,10 @@ uv run python scripts/generate_demo_corpus.py
 Copy-Item .env.example .env
 ```
 
+El generador acepta `--output-dir <ruta>` y produce siempre los mismos bytes junto con
+`examples/corpus/demo/manifest.sha256`. Usa `--check` para contrastar el corpus versionado sin
+modificarlo.
+
 Instala Ollama y descarga el baseline:
 
 ```powershell
@@ -144,6 +148,11 @@ uv run rag-docs-eval --gold evaluation/gold-set.yaml
 
 El informe se escribe en `logs/` y separa estado, retrieval, hechos, idioma y citas; también
 registra latencia por caso, p50/p95 y errores. No usa otro LLM como juez.
+
+`gold-set.yaml` es el smoke set compatible. Para desarrollo y validación separada están
+`gold-set.dev.yaml` (16 casos) y `gold-set.validation.yaml` (8 casos); ambos usan exclusivamente
+el corpus sintético `0.2.0`, declaran hechos objetivo y localizadores verificables, y no comparten
+IDs, preguntas, hechos objetivo ni grupos de equivalencia.
 
 ## Problemas comunes
 
