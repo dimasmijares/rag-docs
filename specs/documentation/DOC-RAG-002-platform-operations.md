@@ -5,11 +5,13 @@ layer: documentation
 scope: persistent
 status: draft
 confidence: low
-version: 0.2.0
+version: 0.3.0
 created: 2026-09-01
 updated: 2026-09-01
 owner: rag-docs-team
 dependencies:
+  - id: RFC-003
+    relation: implements
   - id: ARCH-002
     relation: implements
   - id: DOC-RAG-001
@@ -43,14 +45,40 @@ de dependencias externas para servidor, Azure y AWS.
 
 ## Iteration Protocol
 
-Cada iteración implementa una sola `WRK-TASK` en una rama `codex/wrk-task-NNN-slug` y una PR.
-Los números identifican artefactos; la selección respeta dependencias, release activo y reducción
-de riesgo. Antes de activar la tarea se sincroniza `main`, se comprueba que no haya trabajo local o
-PR solapadas y se ejecutan `validate`, `orphans` y `context`.
+Una iteración implementa una sola `WRK-TASK` en una rama `codex/wrk-task-NNN-slug` y una PR. Una
+sesión coordinadora puede ejecutar varias iteraciones en serie o coordinar iteraciones
+independientes en paralelo cuando la petición del usuario autorice varias tareas.
 
-La tarea sólo se completa tras pruebas, Evidence, gate público y checks remotos. La PR se fusiona
-cuando todos los gates están verdes y la iteración termina después de sincronizar `main`; no se
-activa otra tarea en el mismo ciclo.
+Los números identifican artefactos; la selección respeta dependencias terminales en `main`,
+release activo, reducción de riesgo y capacidad de desbloqueo. Antes de activar una tarea se
+sincroniza `main`, se comprueba que el checkout esté limpio y que no haya PR con scope de
+implementación solapado, y se ejecutan `validate`, `orphans` y `context`.
+
+Una solicitud singular ejecuta una tarea lista. Una solicitud de continuar el release permite
+repetir iteraciones en serie: tras cada merge se sincroniza `main` y se recalcula el DAG antes de
+seleccionar la siguiente tarea.
+
+## Agentic Orchestration
+
+Dentro de una tarea se usan subagentes para análisis o workstreams acotados e independientes
+cuando reduzcan el tiempo sin provocar ediciones conflictivas. Se prefiere análisis paralelo de
+solo lectura antes de modificar archivos compartidos; el agente principal conserva síntesis,
+integración, gates y resultado final.
+
+Pueden coexistir inicialmente hasta dos tareas independientes si el usuario autoriza trabajo
+múltiple, todas sus dependencias están terminales en `main`, ninguna depende directa o
+transitivamente de la otra y sus scopes de implementación no se solapan. Cada una usa worktree,
+rama y PR propios, y cada checkout contiene como máximo una WRK-TASK activa. Los archivos KDD de
+coordinación compartidos son responsabilidad del coordinador.
+
+Las PR concurrentes se fusionan de una en una. Antes de integrar la siguiente se actualiza desde
+el nuevo `main`, se resuelve drift y se repiten los gates. Una tarea dependiente nunca empieza
+antes de que sus predecesoras estén fusionadas y terminales. Ante dudas de dependencia, scope u
+orden de integración, el trabajo se serializa.
+
+La tarea sólo se completa tras pruebas proporcionales, Evidence, lifecycle, gate público y checks
+remotos. La PR se fusiona cuando todos los gates obligatorios están verdes y la iteración termina
+después de verificar el merge y sincronizar `main`.
 
 ## Discovered Work
 
@@ -69,4 +97,7 @@ y tareas conservando Evidence antes de publicar el tag.
 - Compose continúa siendo el flujo sencillo y Kubernetes aparece como evolución.
 - No se documentan valores de secretos, IP privadas ni rutas personales.
 - La V3 se describe como simulación local, no como alta disponibilidad física.
-- Una sola WRK-TASK puede estar activa y toda tarea terminal conserva criterios y Evidence cerrados.
+- Cada checkout contiene como máximo una WRK-TASK activa y toda tarea terminal conserva criterios
+  y Evidence cerrados.
+- La ejecución serial y paralela respeta el DAG, scopes aislados, gates por PR e integración una a
+  una desde `main` actualizado.
