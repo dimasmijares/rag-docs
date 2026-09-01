@@ -31,7 +31,7 @@ modelos antes de publicar la baseline.
 | 3 | WRK-TASK-025 | completed | 024 | Licencia, GitHub y rama `main` |
 | 4 | WRK-TASK-079 | completed | 025 | Lifecycle y protocolo KDD |
 | 5 | WRK-TASK-028 | completed | 025, 079 | CI y gates de seguridad |
-| 6 | WRK-TASK-080 | active | 079, 028 | Orquestación agentic y DoR de 026 |
+| 6 | WRK-TASK-080 | completed | 079, 028 | Orquestación agentic y DoR de 026 |
 | 7 | WRK-TASK-026 | draft | 024, 079, 080 | Corpus y gold sets sintéticos |
 | 8 | WRK-TASK-012 | draft | 009, 023, 026, 079 | Métricas de retrieval |
 | 9 | WRK-TASK-027 | draft | 012, 026 | Benchmark de modelos y recursos |
@@ -44,5 +44,5 @@ modelos antes de publicar la baseline.
 - `WRK-TASK-025` publicó el repositorio Apache-2.0, protegió `main` y fusionó la PR inicial.
 - `WRK-TASK-079` normalizó lifecycle y Definition of Ready; `WRK-TASK-028` dejó obligatorios los
   gates remotos.
-- `WRK-TASK-080` hace persistente la orquestación agentic y deja `WRK-TASK-026` preparada para
+- `WRK-TASK-080` hizo persistente la orquestación agentic y dejó `WRK-TASK-026` preparada para
   ejecutarse desde una sesión nueva.
