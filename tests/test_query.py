@@ -11,13 +11,16 @@ def make_hit(
     tmp_path: Path,
     score: float = 0.9,
     text: str = "ETL_CLIENTES_DIARIA carga clientes.",
+    relative_path: str = "etl/doc.md",
+    locator: dict[str, str | int] | None = None,
+    section: str | None = None,
 ) -> SearchHit:
-    path = tmp_path / "doc.md"
+    path = tmp_path / Path(relative_path).name
     path.write_text("ETL_CLIENTES_DIARIA", encoding="utf-8")
-    candidate = DocumentCandidate("demo", path, "etl/doc.md", path.as_uri(), "hash")
+    candidate = DocumentCandidate("demo", path, relative_path, path.as_uri(), "hash")
     chunk = chunk_document(
         candidate,
-        [ExtractedUnit(text, {"page": 1})],
+        [ExtractedUnit(text, locator or {"page": 1}, section)],
     )[0]
     return SearchHit(chunk, score)
 
@@ -45,7 +48,77 @@ def test_query_without_hits_does_not_call_generator() -> None:
 
     assert result.answer_status == "insufficient_evidence"
     assert result.citations == []
+    assert result.retrieval_diagnostics == []
     assert generator.context == ""
+
+
+def test_retrieval_diagnostics_preserve_rank_and_explain_context_selection(
+    tmp_path: Path,
+) -> None:
+    selected = make_hit(
+        tmp_path,
+        score=0.99,
+        text="La restauración de `ATLAS_LEDGER` usa `SNAPSHOT_BLUE`.",
+        relative_path="continuity/atlas-guide.md",
+        section="Restauración Atlas",
+    )
+    equivalent = make_hit(
+        tmp_path,
+        score=0.97,
+        text="La restauración de ATLAS_LEDGER usa SNAPSHOT_BLUE.",
+        relative_path="continuity/atlas-procedure.docx",
+        section="Restauración Atlas",
+    )
+    limited = make_hit(
+        tmp_path,
+        score=0.80,
+        text="El procedimiento requiere aprobación de RISK_OPS.",
+        relative_path="continuity/other.txt",
+        locator={"page": 2},
+        section="Aprobación",
+    )
+    store = FakeVectorStore()
+    repeated = SearchHit(selected.chunk, selected.score)
+    store.hits = [selected, repeated, equivalent, limited]
+    service = QueryService(
+        FakeEmbedder(),
+        store,
+        FakeGenerator("La restauración usa SNAPSHOT_BLUE [1]."),
+        context_chunks=1,
+    )
+
+    result = service.query("Resume la restauración disponible")
+    diagnostics = result.model_dump()["retrieval_diagnostics"]
+
+    assert [item["rank"] for item in diagnostics] == [1, 2, 3, 4]
+    assert [item["score"] for item in diagnostics] == [0.99, 0.99, 0.97, 0.80]
+    assert [item["selected"] for item in diagnostics] == [True, False, False, False]
+    assert [item["context_rank"] for item in diagnostics] == [1, None, None, None]
+    assert [item["discard_reason"] for item in diagnostics] == [
+        None,
+        "duplicate_chunk",
+        "equivalent_document",
+        "context_limit",
+    ]
+    assert diagnostics[0]["relative_path"] == "continuity/atlas-guide.md"
+    assert diagnostics[0]["section"] == "Restauración Atlas"
+    assert diagnostics[3]["locator"] == {"page": 2}
+    assert all(item["chunk_id"] for item in diagnostics)
+    assert all(item["document_id"] for item in diagnostics)
+    assert all(item["source_id"] == "demo" for item in diagnostics)
+    assert set(diagnostics[0]) == {
+        "rank",
+        "score",
+        "chunk_id",
+        "document_id",
+        "source_id",
+        "relative_path",
+        "locator",
+        "section",
+        "selected",
+        "context_rank",
+        "discard_reason",
+    }
 
 
 def test_generator_can_reject_related_but_insufficient_context(tmp_path: Path) -> None:

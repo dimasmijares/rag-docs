@@ -37,6 +37,112 @@ def _fact_matches(answer: str, fact: str | dict[str, list[str]]) -> bool:
     raise ValueError(f"Hecho no soportado: {fact!r}")
 
 
+def _matches_evidence(candidate: dict[str, Any], expected: dict[str, Any]) -> bool:
+    if candidate.get("relative_path") != expected.get("document"):
+        return False
+    section = expected.get("section")
+    if section is not None and candidate.get("section") != section:
+        return False
+    locator = expected.get("locator") or {}
+    candidate_locator = candidate.get("locator") or {}
+    return all(candidate_locator.get(key) == value for key, value in locator.items())
+
+
+def _expected_evidence_groups(case: dict[str, Any]) -> list[list[dict[str, Any]]]:
+    locators = list(case.get("expected_locators") or [])
+    required = list(case.get("expected_documents") or [])
+    alternatives = list(case.get("expected_any_documents") or [])
+    groups: list[list[dict[str, Any]]] = []
+    for document in required:
+        matches = [item for item in locators if item.get("document") == document]
+        groups.extend([[item] for item in matches] or [[{"document": document}]])
+    if alternatives:
+        matches = [item for item in locators if item.get("document") in alternatives]
+        groups.append(matches or [{"document": document} for document in alternatives])
+    return groups
+
+
+def _retrieval_metrics(
+    case: dict[str, Any], diagnostics: list[dict[str, Any]]
+) -> dict[str, Any]:
+    groups = _expected_evidence_groups(case)
+    eligible = case.get("expected_status") == "grounded" and bool(groups)
+    names = [
+        "recall_at_1",
+        "recall_at_3",
+        "recall_at_5",
+        "recall_at_8",
+        "reciprocal_rank",
+        "precision_at_1",
+        "precision_at_3",
+        "precision_at_5",
+        "precision_at_8",
+    ]
+    if not eligible:
+        return {"eligible": False, **dict.fromkeys(names)}
+
+    ranked = sorted(diagnostics, key=lambda item: int(item["rank"]))
+
+    def relevant(candidate: dict[str, Any]) -> bool:
+        return any(
+            _matches_evidence(candidate, expected)
+            for group in groups
+            for expected in group
+        )
+
+    metrics: dict[str, Any] = {"eligible": True}
+    for cutoff in (1, 3, 5, 8):
+        candidates = [item for item in ranked if int(item["rank"]) <= cutoff]
+        covered = sum(
+            any(
+                _matches_evidence(candidate, expected)
+                for candidate in candidates
+                for expected in group
+            )
+            for group in groups
+        )
+        metrics[f"recall_at_{cutoff}"] = covered / len(groups)
+        metrics[f"precision_at_{cutoff}"] = (
+            sum(relevant(candidate) for candidate in candidates) / len(candidates)
+            if candidates
+            else 0.0
+        )
+    first_relevant = next(
+        (int(candidate["rank"]) for candidate in ranked if relevant(candidate)), None
+    )
+    metrics["reciprocal_rank"] = 1 / first_relevant if first_relevant else 0.0
+    return metrics
+
+
+def aggregate_retrieval_metrics(results: list[dict[str, Any]]) -> dict[str, Any]:
+    eligible = [
+        item["retrieval_metrics"]
+        for item in results
+        if item["retrieval_metrics"]["eligible"]
+    ]
+    names = (
+        "recall_at_1",
+        "recall_at_3",
+        "recall_at_5",
+        "recall_at_8",
+        "reciprocal_rank",
+        "precision_at_1",
+        "precision_at_3",
+        "precision_at_5",
+        "precision_at_8",
+    )
+    return {
+        "cases": len(results),
+        "eligible_cases": len(eligible),
+        **{
+            name: round(sum(float(item[name]) for item in eligible) / len(eligible), 6)
+            if eligible
+            else None
+            for name in names
+        },
+    }
+
+
 def evaluate_case(case: dict[str, Any], payload: dict[str, Any]) -> dict[str, Any]:
     answer = str(payload["answer"])
     citations = list(payload.get("citations") or [])
@@ -74,6 +180,44 @@ def evaluate_case(case: dict[str, Any], payload: dict[str, Any]) -> dict[str, An
     passed = all(
         (status_ok, retrieval_ok, facts_ok, reference_ok, language_ok, citations_ok)
     )
+    diagnostics = list(payload.get("retrieval_diagnostics") or [])
+    if not diagnostics:
+        diagnostics = [
+            {
+                **citation,
+                "rank": index,
+                "selected": True,
+                "section": citation.get("section"),
+                "locator": citation.get("locator") or {},
+            }
+            for index, citation in enumerate(citations, start=1)
+        ]
+    retrieval_metrics = _retrieval_metrics(case, diagnostics)
+    failure_stage: str | None = None
+    if not passed:
+        groups = _expected_evidence_groups(case)
+        if retrieval_metrics["eligible"]:
+            candidates = [item for item in diagnostics if int(item["rank"]) <= 8]
+            selected = [item for item in diagnostics if item.get("selected")]
+
+            def covers(items: list[dict[str, Any]]) -> bool:
+                return all(
+                    any(
+                        _matches_evidence(candidate, expected)
+                        for candidate in items
+                        for expected in group
+                    )
+                    for group in groups
+                )
+
+            if not covers(candidates):
+                failure_stage = "retrieval"
+            elif not covers(selected):
+                failure_stage = "context_selection"
+            else:
+                failure_stage = "generation"
+        else:
+            failure_stage = "generation"
     return {
         "id": case["id"],
         "passed": passed,
@@ -90,6 +234,8 @@ def evaluate_case(case: dict[str, Any], payload: dict[str, Any]) -> dict[str, An
         "api_error": None,
         "model": payload.get("model"),
         "embedding_model": payload.get("embedding_model"),
+        "retrieval_metrics": retrieval_metrics,
+        "failure_stage": failure_stage,
     }
 
 
@@ -123,6 +269,8 @@ def evaluate(base_url: str, gold_path: Path) -> dict[str, Any]:
                         "api_error": str(exc),
                         "model": None,
                         "embedding_model": None,
+                        "retrieval_metrics": _retrieval_metrics(case, []),
+                        "failure_stage": "api",
                         "latency_ms": round((perf_counter() - started) * 1000, 2),
                     }
                 )
@@ -149,6 +297,7 @@ def evaluate(base_url: str, gold_path: Path) -> dict[str, Any]:
             "min_ms": round(min(latencies), 2) if latencies else 0.0,
             "max_ms": round(max(latencies), 2) if latencies else 0.0,
         },
+        "retrieval": aggregate_retrieval_metrics(results),
         "cases": results,
     }
 
