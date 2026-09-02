@@ -34,7 +34,7 @@ modelos antes de publicar la baseline.
 | 6 | WRK-TASK-080 | completed | 079, 028 | Orquestación agentic y DoR de 026 |
 | 7 | WRK-TASK-026 | completed | 024, 079, 080 | Corpus y gold sets sintéticos |
 | 8 | WRK-TASK-012 | completed | 009, 023, 026, 079 | Métricas de retrieval |
-| 9 | WRK-TASK-027 | draft | 012, 026 | Benchmark de modelos y recursos |
+| 9 | WRK-TASK-027 | draft | 012, 026 | Baseline local reproducible en el portátil |
 | 10 | WRK-TASK-029 | draft | 027, 028 | Documentación y release `v0.2.0` |
 
 ## Evidence
