@@ -3,11 +3,11 @@ id: WRK-TASK-012
 type: spec
 layer: work-task
 scope: ephemeral
-status: draft
-confidence: low
-version: 0.1.0
+status: completed
+confidence: medium
+version: 1.0.0
 created: 2026-08-30
-updated: 2026-09-01
+updated: 2026-09-02
 owner: rag-docs-team
 parent: WRK-PLAN-005
 activates: [ARCH-001, ARCH-002, DOM-RAG-001, FEAT-RAG-001, RULE-001, RULE-002, RULE-004]
@@ -38,12 +38,22 @@ Excluye hybrid retrieval, reranking, query rewriting, multi-query y cambios de e
 
 ## Acceptance Criteria
 
-- [ ] Se registran rank, score, selección y motivo de descarte sin publicar contenido privado.
-- [ ] Variantes documentales equivalentes y chunks repetidos no ocupan contexto redundante.
-- [ ] Se miden Recall@1/3/5/8, MRR, Precision@k y latencia por caso y agregada.
-- [ ] Casos sin evidencia no se contabilizan como falsos fallos de recuperación.
-- [ ] El informe permite atribuir cada fallo a recuperación, selección de contexto o generación.
+- [x] Se registran rank, score, selección y motivo de descarte sin publicar contenido privado.
+- [x] Variantes documentales equivalentes y chunks repetidos no ocupan contexto redundante.
+- [x] Se miden Recall@1/3/5/8, MRR, Precision@k y latencia por caso y agregada.
+- [x] Casos sin evidencia no se contabilizan como falsos fallos de recuperación.
+- [x] El informe permite atribuir cada fallo a recuperación, selección de contexto o generación.
 
 ## Evidence
 
-Pendiente.
+- `QueryResult.retrieval_diagnostics` conserva el ranking del vector store, score, identificadores
+  opacos, localizador, selección, orden de contexto y descarte; no incluye texto, snippets ni URI.
+- La selección descarta chunks repetidos y variantes con la misma huella normalizada antes de
+  aplicar el límite de contexto, con motivos `duplicate_chunk`, `equivalent_document` y
+  `context_limit` cubiertos por pruebas sintéticas.
+- El evaluador calcula Recall@1/3/5/8, reciprocal rank (MRR al agregar), Precision@1/3/5/8 y
+  latencia por caso/agregada usando documentos, secciones y localizadores del gold set.
+- Los casos negativos quedan marcados como no elegibles en las métricas de retrieval y los fallos
+  se atribuyen a `retrieval`, `context_selection`, `generation` o `api`.
+- Gates locales superados: KDD validó `125` specs y `863` relaciones sin huérfanos; lifecycle,
+  Ruff, `47` tests, gate de publicación sobre `201` candidatos y `git diff --check` quedaron verdes.
