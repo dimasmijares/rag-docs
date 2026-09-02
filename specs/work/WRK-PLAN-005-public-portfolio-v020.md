@@ -7,7 +7,7 @@ status: active
 confidence: low
 version: 0.2.0
 created: 2026-09-01
-updated: 2026-09-01
+updated: 2026-09-02
 owner: rag-docs-team
 parent: WRK-SPEC-005
 activates: [ARCH-001, ARCH-002, DOM-RAG-001, FEAT-RAG-001, DOC-RAG-001, DOC-RAG-002, RULE-001, RULE-002]
@@ -33,7 +33,7 @@ modelos antes de publicar la baseline.
 | 5 | WRK-TASK-028 | completed | 025, 079 | CI y gates de seguridad |
 | 6 | WRK-TASK-080 | completed | 079, 028 | Orquestación agentic y DoR de 026 |
 | 7 | WRK-TASK-026 | completed | 024, 079, 080 | Corpus y gold sets sintéticos |
-| 8 | WRK-TASK-012 | draft | 009, 023, 026, 079 | Métricas de retrieval |
+| 8 | WRK-TASK-012 | completed | 009, 023, 026, 079 | Métricas de retrieval |
 | 9 | WRK-TASK-027 | draft | 012, 026 | Benchmark de modelos y recursos |
 | 10 | WRK-TASK-029 | draft | 027, 028 | Documentación y release `v0.2.0` |
 
@@ -48,3 +48,5 @@ modelos antes de publicar la baseline.
   ejecutarse desde una sesión nueva.
 - `WRK-TASK-026` publicó corpus multiformato determinista y gold sets dev/validation aislados,
   con manifiesto SHA-256, localizadores verificados y gates locales/remotos verdes.
+- `WRK-TASK-012` añadió diagnóstico privacy-safe de candidatos, deduplicación de evidencia,
+  métricas de retrieval por cortes y atribución de fallos por etapa.

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import Literal
 
 from rag_docs.embeddings import Embedder
@@ -42,6 +42,21 @@ class AnswerClaim:
 
 
 @dataclass(frozen=True, slots=True)
+class RetrievalDiagnostic:
+    rank: int
+    score: float
+    chunk_id: str
+    document_id: str
+    source_id: str
+    relative_path: str
+    locator: dict[str, str | int]
+    section: str | None
+    selected: bool
+    context_rank: int | None
+    discard_reason: Literal["duplicate_chunk", "equivalent_document", "context_limit"] | None
+
+
+@dataclass(frozen=True, slots=True)
 class QueryResult:
     answer_status: Literal["grounded", "insufficient_evidence"]
     answer: str
@@ -51,6 +66,7 @@ class QueryResult:
     answer_language: SupportedLanguage
     claims: list[AnswerClaim]
     generation_mode: Literal["llm", "extractive_fallback", "none"]
+    retrieval_diagnostics: list[RetrievalDiagnostic] = field(default_factory=list)
 
     def model_dump(self) -> dict:
         return asdict(self)
@@ -105,18 +121,69 @@ class QueryService:
         self.context_chunks = context_chunks
         self.min_score = min_score
 
-    def _select_hits(self, hits: list[SearchHit]) -> list[SearchHit]:
+    @staticmethod
+    def _content_fingerprint(text: str) -> str:
+        decomposed = unicodedata.normalize("NFKD", text.casefold())
+        unaccented = "".join(
+            character for character in decomposed if not unicodedata.combining(character)
+        )
+        return " ".join(re.findall(r"[a-z0-9]+", unaccented))
+
+    def _select_hits(
+        self, hits: list[SearchHit]
+    ) -> tuple[list[SearchHit], dict[int, str], list[int]]:
         selected: list[SearchHit] = []
-        seen_texts: set[str] = set()
-        for hit in hits:
-            normalized = " ".join(hit.chunk.text.casefold().split())
-            if normalized in seen_texts:
+        selected_ranks: list[int] = []
+        discarded: dict[int, str] = {}
+        seen: dict[str, SearchHit] = {}
+        for rank, hit in enumerate(hits, start=1):
+            fingerprint = self._content_fingerprint(hit.chunk.text)
+            duplicate = seen.get(fingerprint)
+            if duplicate is not None:
+                discarded[rank] = (
+                    "duplicate_chunk"
+                    if duplicate.chunk.document_id == hit.chunk.document_id
+                    else "equivalent_document"
+                )
                 continue
-            seen_texts.add(normalized)
-            selected.append(hit)
             if len(selected) == self.context_chunks:
-                break
-        return selected
+                discarded[rank] = "context_limit"
+                continue
+            seen[fingerprint] = hit
+            selected.append(hit)
+            selected_ranks.append(rank)
+        return selected, discarded, selected_ranks
+
+    @staticmethod
+    def _retrieval_diagnostics(
+        hits: list[SearchHit],
+        selected: list[SearchHit],
+        raw_rank_by_hit: dict[int, int],
+        discarded: dict[int, str],
+    ) -> list[RetrievalDiagnostic]:
+        context_ranks = {
+            raw_rank_by_hit[id(hit)]: context_rank
+            for context_rank, hit in enumerate(selected, start=1)
+        }
+        diagnostics: list[RetrievalDiagnostic] = []
+        for rank, hit in enumerate(hits, start=1):
+            context_rank = context_ranks.get(rank)
+            diagnostics.append(
+                RetrievalDiagnostic(
+                    rank=rank,
+                    score=round(hit.score, 6),
+                    chunk_id=hit.chunk.chunk_id,
+                    document_id=hit.chunk.document_id,
+                    source_id=hit.chunk.source_id,
+                    relative_path=hit.chunk.relative_path,
+                    locator=hit.chunk.locator,
+                    section=hit.chunk.section,
+                    selected=context_rank is not None,
+                    context_rank=context_rank,
+                    discard_reason=discarded.get(rank),  # type: ignore[arg-type]
+                )
+            )
+        return diagnostics
 
     def _prioritize_context(self, question: str, hits: list[SearchHit]) -> list[SearchHit]:
         if not self._TECHNICAL_QUESTION.search(question):
@@ -377,7 +444,14 @@ class QueryService:
         expected_language = infer_question_language(question)
         vector = self.embedder.embed_query(question)
         hits = self.store.search(vector, self.top_k, self.min_score)
-        selected = self._prioritize_context(question, self._select_hits(hits))
+        selected, discarded, selected_ranks = self._select_hits(hits)
+        raw_rank_by_hit = {
+            id(hit): raw_rank for hit, raw_rank in zip(selected, selected_ranks, strict=True)
+        }
+        selected = self._prioritize_context(question, selected)
+        retrieval_diagnostics = self._retrieval_diagnostics(
+            hits, selected, raw_rank_by_hit, discarded
+        )
         citations = [
             Citation(
                 reference=index,
@@ -407,6 +481,7 @@ class QueryService:
                 answer_language=expected_language,
                 claims=[],
                 generation_mode="none",
+                retrieval_diagnostics=retrieval_diagnostics,
             )
 
         context_parts: list[str] = []
@@ -455,6 +530,7 @@ class QueryService:
                 answer_language=expected_language,
                 claims=[],
                 generation_mode="none",
+                retrieval_diagnostics=retrieval_diagnostics,
             )
 
         answer, claims = self._render_claims(generated)
@@ -476,6 +552,7 @@ class QueryService:
                 answer_language=expected_language,
                 claims=claims,
                 generation_mode=generation_mode,
+                retrieval_diagnostics=retrieval_diagnostics,
             )
 
         return QueryResult(
@@ -487,4 +564,5 @@ class QueryService:
             answer_language=expected_language,
             claims=claims,
             generation_mode=generation_mode,
+            retrieval_diagnostics=retrieval_diagnostics,
         )
