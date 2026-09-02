@@ -153,6 +153,44 @@ registra latencia por caso, p50/p95 y errores. No usa otro LLM como juez.
 el corpus sintético `0.2.0`, declaran hechos objetivo y localizadores verificables, y no comparten
 IDs, preguntas, hechos objetivo ni grupos de equivalencia.
 
+### Benchmark local reproducible
+
+El benchmark de `WRK-TASK-027` se ejecuta directamente contra Qdrant en memoria: no requiere
+Docker ni una API activa, pero sí Ollama local con el modelo exacto declarado en
+`config/benchmark.yaml`. El runner rechaza endpoints no loopback, fuentes distintas del corpus
+`demo`, cambios de hashes y modelos que no sean el 3B bloqueado por digest.
+
+La ejecución canónica tiene tres pasos ordenados. `development` compara los dos perfiles 3B y el
+control de fallback extractivo; `lock` selecciona sólo entre perfiles 3B elegibles usando score,
+Recall@8 y p95; `validation` acepta ese lock, ejecuta exclusivamente el perfil elegido y no
+sobrescribe un resultado existente:
+
+```powershell
+uv run rag-docs-benchmark development
+uv run rag-docs-benchmark lock
+uv run rag-docs-benchmark validation
+uv run rag-docs-benchmark verify
+```
+
+No se debe borrar ni regenerar `validation-results.json` para ajustar la selección. En un clon
+limpio se instalan las dependencias bloqueadas, se descarga el modelo Ollama indicado, se ejecuta
+`python scripts/generate_demo_corpus.py --check` y después `rag-docs-benchmark verify`; una nueva
+medición sobre desarrollo puede ejecutarse en otra ruta, pero no sustituye la evidencia canónica.
+
+Cada perfil recrea índice y embedder. El primer caso se etiqueta `cold` después de desalojar el
+modelo de Ollama; los restantes son `warm` en el mismo proceso. Esto controla residencia del
+modelo, pero no vacía la caché de disco del sistema operativo. `embedding` mide `embed_query`,
+`retrieval` mide la búsqueda vectorial, `generation` suma llamadas al modelo y `grounding` es el
+residuo local de selección, contexto, validación, render y fallback. La memoria registra pico RSS
+del proceso Python, pico de RAM usada en el host y residencia/VRAM publicada por Ollama; no es una
+medición aislada de consumo energético. Los p50/p95 son descriptivos para 16 casos de desarrollo y
+8 de validación y pueden variar con carga, temperatura y política de energía.
+
+Los JSON públicos sólo contienen IDs sintéticos, métricas, códigos de error, configuración y
+hardware saneado. No guardan preguntas, respuestas, prompts, fragmentos, rutas absolutas,
+hostname, usuario, PID ni direcciones de red. El benchmark 14B remoto queda diferido a
+`WRK-TASK-081` y no forma parte de esta baseline.
+
 ## Problemas comunes
 
 - **Qdrant no conecta**: inicia Docker Desktop y comprueba `docker compose ps`.
