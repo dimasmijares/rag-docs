@@ -584,7 +584,7 @@ def execute_phase(
     source_path = (root / str(config["source_file"])).resolve()
     source_definitions = load_sources(source_path)
     expected_demo_root = (root / "examples/corpus/demo").resolve()
-    if len(source_definitions) != 1 or source_definitions[0].source_id != "demo":
+    if len(source_definitions) != 1 or source_definitions[0].id != "demo":
         raise ValueError("El benchmark público sólo permite la fuente sintética demo")
     if source_definitions[0].root != expected_demo_root:
         raise ValueError("La fuente demo debe resolver a examples/corpus/demo")
