@@ -20,6 +20,7 @@ artifacts/private/
 _build/
 .idea/
 .vscode/
+.claude/settings.local.json
 .kdd/
 examples/corporate/*
 !examples/corporate/.gitkeep

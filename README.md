@@ -18,17 +18,16 @@ Web estática → FastAPI → QueryService → Qdrant → contexto → Ollama
 ## Requisitos
 
 - Python 3.11
-- Node.js para validar los specs KDD
 - Docker Desktop para Qdrant
 - Ollama para generación local o en otro equipo autorizado de la red
 
-El remoto del submódulo KDD requiere acceso. La copia incluida está fijada a `d8126e6`.
+La validación del grafo KDD la realiza un CLI propio del repositorio
+(`scripts/kdd_graph.py`), sin submódulos ni Node.js. El directorio `.kdd/` es una
+copia local opcional del framework original y está ignorada por Git.
 
 ## Instalación
 
 ```powershell
-git submodule update --init --recursive
-npm install --prefix .kdd/framework/apps/spec-graph --no-package-lock --no-save
 uv sync --extra dev
 uv run python scripts/generate_demo_corpus.py
 Copy-Item .env.example .env
