@@ -11,6 +11,7 @@
       "Bash(git log:*)",
       "Bash(git show:*)",
       "Bash(git branch:*)",
+      "Bash(gh pr merge:*)",
       "Bash(pwsh -NoProfile -Command *scripts/kdd.ps1*)",
       "Bash(pwsh -NoProfile -Command *scripts/check-kdd-lifecycle.ps1*)",
       "Bash(pwsh -NoProfile -Command *scripts/check-public-safety.ps1*)",
