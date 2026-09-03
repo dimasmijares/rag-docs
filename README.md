@@ -191,6 +191,18 @@ hardware saneado. No guardan preguntas, respuestas, prompts, fragmentos, rutas a
 hostname, usuario, PID ni direcciones de red. El benchmark 14B remoto queda diferido a
 `WRK-TASK-081` y no forma parte de esta baseline.
 
+Los artefactos canónicos viven en `evaluation/benchmarks/wrk-task-027/`
+(`dev-results.json`, `decision-lock.json`, `validation-results.json`).
+
+**Resultado (baseline v0.2.0).** El perfil recomendado es `qwen-3b-balanced`
+(`intfloat/multilingual-e5-small`, `retrieval_top_k` 8, 5 chunks de contexto, `min_score` 0.45,
+`qwen2.5:3b` Q4_K_M, `temperature` 0, `seed` 0). En desarrollo obtiene 13/16 y en la confirmación
+de validación 4/8, siempre con Recall@8 = 1.0: la recuperación no es el cuello de botella y todos
+los fallos restantes se atribuyen a la generación del modelo 3B. La generación domina la latencia
+(p50 ≈ 35 s, p95 ≈ 50–69 s en el hardware registrado) frente a embedding, retrieval y grounding,
+que suman decenas de milisegundos. El salto de calidad esperable con un 14B se medirá en
+`WRK-TASK-081` sobre el PC personal.
+
 ## Problemas comunes
 
 - **Qdrant no conecta**: inicia Docker Desktop y comprueba `docker compose ps`.
