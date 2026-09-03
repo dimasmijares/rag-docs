@@ -21,6 +21,7 @@ _build/
 .idea/
 .vscode/
 .claude/settings.local.json
+.claude/budget.local.json
 .kdd/
 examples/corporate/*
 !examples/corporate/.gitkeep
