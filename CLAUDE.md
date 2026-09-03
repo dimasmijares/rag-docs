@@ -10,6 +10,14 @@ orquestación agentic, criterios de cierre). Léelas antes de seleccionar trabaj
 - Servicios externos locales: Qdrant (`docker compose up -d qdrant`) y Ollama
   (`ollama serve`, modelo `qwen2.5:3b`).
 
+## Servicios locales durante una tarea
+
+Si una tarea necesita Qdrant u Ollama y no responden, arráncalos y continúa:
+`docker compose up -d qdrant`, `ollama serve` en segundo plano y `ollama pull <modelo>`
+si falta el modelo declarado. Detente y avísame solo si el arranque falla, Docker u
+Ollama no están instalados, o el modelo requerido no puede descargarse. Nunca simules
+resultados de un servicio que no está disponible.
+
 ## Comandos frecuentes
 
 ```powershell
