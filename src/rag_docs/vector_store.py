@@ -30,7 +30,10 @@ class QdrantVectorStore:
     def __init__(self, url: str, collection_name: str) -> None:
         from qdrant_client import QdrantClient
 
-        self.client = QdrantClient(url=url, timeout=30, check_compatibility=False)
+        if url == ":memory:":
+            self.client = QdrantClient(location=":memory:")
+        else:
+            self.client = QdrantClient(url=url, timeout=30, check_compatibility=False)
         self.collection_name = collection_name
 
     def ensure_collection(self, vector_size: int) -> None:

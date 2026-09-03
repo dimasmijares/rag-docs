@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "benchmark_id": "wrk-task-027-local-baseline",
+  "locked_at": "2026-09-03T15:45:33.250660+00:00",
+  "revision": "3db062066bc6337c1bc598129b6ae0e9f9773eee",
+  "selected_profile": "qwen-3b-balanced",
+  "selection_policy": {
+    "order": [
+      "score",
+      "retrieval_recall_at_8",
+      "latency_p95_ms"
+    ],
+    "require_baseline_eligible": true
+  },
+  "selection_values": {
+    "score": 0.8125,
+    "retrieval_recall_at_8": 1.0,
+    "latency_p95_ms": 69263.31
+  },
+  "config_sha256": "147ad4615e61d7c034df229054c235c287ae4d57fc996229d5b1768b6f1bebe0",
+  "development_gold_sha256": "b25f187a0cb270c67e1e8ced2ed353a6623c605fa25c859810e268ab5a637d17",
+  "validation_gold_sha256": "d7805afb9eaadc5de24a335a9c276ee30748451f58a5d830fca63789e760848a",
+  "corpus_manifest_sha256": "329929f1ba0d303f3aad2e8f6cec4cca101540988c95f7919e3d28d50ef5e574",
+  "source_sha256": "7c1b4087989da1742fc6cd770abe382a41278ca8abc7f327bfcd13b22629d3a0",
+  "development_report_sha256": "6605fd7b14309871e4c392705ee928c938a4d7179b628597e704ed1e4bd03fc6",
+  "validation_executions_allowed": 1
+}
