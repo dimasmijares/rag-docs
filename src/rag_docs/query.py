@@ -113,6 +113,7 @@ class QueryService:
         top_k: int = 8,
         context_chunks: int = 5,
         min_score: float = 0.45,
+        generation_strategy: Literal["llm", "extractive_fallback"] = "llm",
     ) -> None:
         self.embedder = embedder
         self.store = store
@@ -120,6 +121,7 @@ class QueryService:
         self.top_k = top_k
         self.context_chunks = context_chunks
         self.min_score = min_score
+        self.generation_strategy = generation_strategy
 
     @staticmethod
     def _content_fingerprint(text: str) -> str:
@@ -496,17 +498,23 @@ class QueryService:
         technical_hints = self._technical_evidence_hints(question, citations, selected)
         if technical_hints:
             context = f"{technical_hints}\n\nFRAGMENTOS COMPLETOS\n{context}"
-        generated = self._generate_validated(
-            question,
-            context,
-            expected_language,
-            {citation.reference for citation in citations},
-            {
-                citation.reference: hit.chunk.text
-                for citation, hit in zip(citations, selected, strict=True)
-            },
+        generation_mode: Literal["llm", "extractive_fallback"] = (
+            "extractive_fallback"
+            if self.generation_strategy == "extractive_fallback"
+            else "llm"
         )
-        generation_mode: Literal["llm", "extractive_fallback"] = "llm"
+        generated = None
+        if self.generation_strategy == "llm":
+            generated = self._generate_validated(
+                question,
+                context,
+                expected_language,
+                {citation.reference for citation in citations},
+                {
+                    citation.reference: hit.chunk.text
+                    for citation, hit in zip(citations, selected, strict=True)
+                },
+            )
         if generated is None:
             generated = self._extractive_technical_fallback(
                 question, citations, selected, expected_language

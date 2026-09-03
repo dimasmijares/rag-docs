@@ -333,3 +333,27 @@ def test_technical_question_uses_cited_extractive_fallback_after_two_rejections(
     assert result.generation_mode == "extractive_fallback"
     assert "Job::FechaProceso" in result.answer
     assert "[1]" in result.answer
+
+
+def test_explicit_extractive_strategy_skips_llm(tmp_path: Path) -> None:
+    store = FakeVectorStore()
+    store.hits = [
+        make_hit(
+            tmp_path,
+            text="Inicio STEP_PEDIR_FECHA informa Job::FechaProceso.",
+        )
+    ]
+    generator = FakeGenerator("Esta salida no debe usarse [1].")
+    service = QueryService(
+        FakeEmbedder(),
+        store,
+        generator,
+        generation_strategy="extractive_fallback",
+    )
+
+    result = service.query("¿Qué variable contiene la fecha de proceso?")
+
+    assert result.answer_status == "grounded"
+    assert result.generation_mode == "extractive_fallback"
+    assert "Job::FechaProceso" in result.answer
+    assert generator.feedback == []
