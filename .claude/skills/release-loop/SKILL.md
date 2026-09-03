@@ -44,15 +44,14 @@ Repite mientras queden WRK-TASK no terminales en la release **y** el chequeo de 
 
 Estima el margen restante con la **primera** fuente disponible:
 
-1. **Reminder de sesión.** Si en el contexto reciente hay un aviso
-   `<total_tokens> … left`, úsalo. Para si el valor cae por debajo del **15 %** del que
-   había al inicio de esta invocación, o por debajo de un suelo absoluto de seguridad.
-2. **ccusage** (opcional, terceros). Si el comando está disponible:
-   `npx -y ccusage@latest blocks --active --json`. Mira el bloque de 5 h activo y su
-   proyección (`projection.totalTokens`, `remainingMinutes`). Para si la proyección se
-   acerca al techo configurado en `.claude/budget.local.json` (`{ "blockTokenCeiling": N }`),
-   o si `remainingMinutes` es menor que lo que suele tardar una iteración completa.
-   No instales ccusage ni lo añadas como dependencia del repo; si no está, sáltalo.
+1. **Previsión del repo.** `./scripts/budget.ps1`. Da KPIs (coste típico por tarea,
+   consumido/restante en el bloque de 5 h y en la semana, holgura) y un veredicto
+   GO / CAUTION / STOP. Necesita `.claude/budget.local.json` con `blockCeiling`
+   (y opcional `weeklyCeiling`), que se rellena una vez desde `/status`; sin él el
+   veredicto es solo orientativo. Actúa según el veredicto.
+2. **Reminder de sesión.** Si en el contexto reciente hay un aviso
+   `<total_tokens> … left`, úsalo. Para si cae por debajo del **15 %** del valor que
+   había al inicio de esta invocación, o de un suelo absoluto de seguridad.
 3. **Sin señal fiable.** Aplica un tope duro: como máximo **3** WRK-TASK completadas por
    invocación. Al alcanzarlo, para y reporta.
 

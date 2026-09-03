@@ -28,6 +28,7 @@ uv run --no-sync ruff check .    # estilo
 ./scripts/kdd.ps1 orphans
 ./scripts/kdd.ps1 context -Id WRK-TASK-000
 ./scripts/verify.ps1             # puerta completa (KDD + estilo + tests + seguridad)
+./scripts/budget.ps1            # previsión de uso restante antes de otra tarea
 ```
 
 Antes de abrir PR, `./scripts/verify.ps1` debe estar verde. Los mismos gates corren

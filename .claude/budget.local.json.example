@@ -1,0 +1,11 @@
+{
+  "_comment": "Copy to .claude/budget.local.json (git-ignored). Fill from /status or ccusage.",
+  "blockCeiling": 2000000,
+  "weeklyCeiling": 20000000,
+  "weights": {
+    "input_tokens": 1.0,
+    "cache_creation_input_tokens": 1.0,
+    "cache_read_input_tokens": 0.1,
+    "output_tokens": 1.0
+  }
+}
