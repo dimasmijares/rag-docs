@@ -3,11 +3,11 @@ id: WRK-PLAN-005
 type: spec
 layer: work-plan
 scope: ephemeral
-status: active
-confidence: low
-version: 0.2.0
+status: archived
+confidence: high
+version: 1.0.0
 created: 2026-09-01
-updated: 2026-09-02
+updated: 2026-09-03
 owner: rag-docs-team
 parent: WRK-SPEC-005
 activates: [ARCH-001, ARCH-002, DOM-RAG-001, FEAT-RAG-001, DOC-RAG-001, DOC-RAG-002, RULE-001, RULE-002]
@@ -26,16 +26,19 @@ modelos antes de publicar la baseline.
 
 | Orden | Tarea | Estado | Dependencias | Entrega |
 |---:|---|---|---|---|
-| 1 | WRK-TASK-023 | completed | 022 | Roadmap KDD completo |
-| 2 | WRK-TASK-024 | completed | 023 | Saneamiento público |
-| 3 | WRK-TASK-025 | completed | 024 | Licencia, GitHub y rama `main` |
-| 4 | WRK-TASK-079 | completed | 025 | Lifecycle y protocolo KDD |
-| 5 | WRK-TASK-028 | completed | 025, 079 | CI y gates de seguridad |
-| 6 | WRK-TASK-080 | completed | 079, 028 | Orquestación agentic y DoR de 026 |
-| 7 | WRK-TASK-026 | completed | 024, 079, 080 | Corpus y gold sets sintéticos |
-| 8 | WRK-TASK-012 | completed | 009, 023, 026, 079 | Métricas de retrieval |
-| 9 | WRK-TASK-027 | completed | 012, 026 | Baseline local reproducible en el portátil |
-| 10 | WRK-TASK-029 | draft | 027, 028 | Documentación y release `v0.2.0` |
+| 1 | WRK-TASK-023 | archived | 022 | Roadmap KDD completo |
+| 2 | WRK-TASK-024 | archived | 023 | Saneamiento público |
+| 3 | WRK-TASK-025 | archived | 024 | Licencia, GitHub y rama `main` |
+| 4 | WRK-TASK-079 | archived | 025 | Lifecycle y protocolo KDD |
+| 5 | WRK-TASK-028 | archived | 025, 079 | CI y gates de seguridad |
+| 6 | WRK-TASK-080 | archived | 079, 028 | Orquestación agentic y DoR de 026 |
+| 7 | WRK-TASK-026 | archived | 024, 079, 080 | Corpus y gold sets sintéticos |
+| 8 | WRK-TASK-012 | archived | 009, 023, 026, 079 | Métricas de retrieval |
+| 9 | WRK-TASK-027 | archived | 012, 026 | Baseline local reproducible en el portátil |
+| 10 | WRK-TASK-029 | archived | 027, 028 | Documentación y release `v0.2.0` |
+
+Las diez tareas están archivadas conservando criterios y Evidence. `WRK-SPEC-005` recoge la
+consolidación del release y el tag `v0.2.0` se publica desde `main` fusionada y verificada.
 
 ## Evidence
 
