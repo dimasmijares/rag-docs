@@ -42,6 +42,9 @@ dependency-review.
 - Protocolo de iteración: `specs/documentation/DOC-RAG-002-platform-operations.md`.
 - Rama y PR por tarea: `codex/wrk-task-NNN-slug` (convención heredada, se mantiene).
 - No versiones documentos ni derivados privados; el gate `public-safety` los rechaza.
+- Para ejecutar varias WRK-TASK en serie sin supervisión ("continúa la release hasta
+  cerrarla"), usa la skill `release-loop`: para en checkpoints seguros y deja margen de
+  presupuesto de tokens.
 
 ## Modelo y esfuerzo sugeridos
 
