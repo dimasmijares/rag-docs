@@ -34,7 +34,7 @@ modelos antes de publicar la baseline.
 | 6 | WRK-TASK-080 | completed | 079, 028 | Orquestación agentic y DoR de 026 |
 | 7 | WRK-TASK-026 | completed | 024, 079, 080 | Corpus y gold sets sintéticos |
 | 8 | WRK-TASK-012 | completed | 009, 023, 026, 079 | Métricas de retrieval |
-| 9 | WRK-TASK-027 | draft | 012, 026 | Baseline local reproducible en el portátil |
+| 9 | WRK-TASK-027 | completed | 012, 026 | Baseline local reproducible en el portátil |
 | 10 | WRK-TASK-029 | draft | 027, 028 | Documentación y release `v0.2.0` |
 
 ## Evidence
@@ -50,3 +50,7 @@ modelos antes de publicar la baseline.
   con manifiesto SHA-256, localizadores verificados y gates locales/remotos verdes.
 - `WRK-TASK-012` añadió diagnóstico privacy-safe de candidatos, deduplicación de evidencia,
   métricas de retrieval por cortes y atribución de fallos por etapa.
+- `WRK-TASK-027` publicó el runner `rag-docs-benchmark` (fases development/lock/validation/verify),
+  separó latencia de embedding/retrieval/grounding/generación, bloqueó la baseline local
+  `qwen-3b-balanced` sólo con desarrollo y la confirmó una vez con validación (Recall@8 = 1.0; los
+  fallos restantes son de generación 3B, no de retrieval). El 14B queda diferido a `WRK-TASK-081`.

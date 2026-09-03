@@ -16,9 +16,12 @@ class Embedder(Protocol):
 
 
 class SentenceTransformerEmbedder:
-    def __init__(self, model_name: str, batch_size: int = 16) -> None:
+    def __init__(
+        self, model_name: str, batch_size: int = 16, revision: str | None = None
+    ) -> None:
         self._model_name = model_name
         self.batch_size = batch_size
+        self.revision = revision
         self._model = None
 
     @property
@@ -29,7 +32,9 @@ class SentenceTransformerEmbedder:
         if self._model is None:
             from sentence_transformers import SentenceTransformer
 
-            self._model = SentenceTransformer(self._model_name, device="cpu")
+            self._model = SentenceTransformer(
+                self._model_name, device="cpu", revision=self.revision
+            )
         return self._model
 
     @property
