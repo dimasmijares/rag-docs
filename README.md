@@ -2,6 +2,8 @@
 
 PoC local de RAG documental para consultar PDF, DOCX, PPTX, XLSX, TXT y Markdown con respuestas grounded y fuentes localizables. El desarrollo está gobernado por KDD: conocimiento persistente, trabajo trazable y decisiones enlazadas en `specs/`.
 
+Release actual: **v0.2.0** — portfolio público reproducible sobre corpus y gold sets sintéticos.
+
 ## Arquitectura
 
 ```text
@@ -14,6 +16,17 @@ Web estática → FastAPI → QueryService → Qdrant → contexto → Ollama
 - Qdrant escucha solo en `127.0.0.1:6333`.
 - El modelo de embeddings se carga bajo demanda en CPU.
 - Una respuesta sin evidencia suficiente no invoca conocimiento general.
+
+## Privacidad
+
+- El repositorio público sólo contiene corpus, gold sets, configuración y resultados
+  **sintéticos**. El gate `public-safety` (local y en CI) rechaza rutas privadas, IPs internas,
+  rutas personales de Windows e identificadores derivados conocidos antes de cada commit.
+- La documentación corporativa se coloca en `examples/corporate/` (ignorado por Git) o en otra
+  carpeta fuera del árbol; nunca se versiona.
+- Todo el procesamiento —extracción, chunking, embeddings, índice, recuperación y generación— es
+  local. Sólo un perfil Ollama remoto declarado de forma explícita envía pregunta y fragmentos por
+  HTTP a otro equipo autorizado.
 
 ## Requisitos
 
@@ -42,6 +55,21 @@ Instala Ollama y descarga el baseline:
 ```powershell
 ollama pull qwen2.5:3b
 ```
+
+## Demo reproducible desde un clon limpio
+
+`scripts/demo.ps1` ejecuta el flujo verificable de `v0.2.0`: instala dependencias bloqueadas,
+contrasta el corpus sintético contra su manifiesto, valida los artefactos de benchmark y comprueba
+si Qdrant y Ollama están disponibles.
+
+```powershell
+./scripts/demo.ps1            # comprobación reproducible sin servicios
+./scripts/demo.ps1 -Serve     # además arranca Qdrant y la API en http://127.0.0.1:8000
+```
+
+El paso manual equivalente es `uv sync --extra dev`, luego
+`uv run python scripts/generate_demo_corpus.py --check`, `uv run rag-docs-benchmark verify` y la
+ejecución híbrida de abajo.
 
 ## Ejecución híbrida recomendada
 

@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from rag_docs import __version__
 from rag_docs.container import ApplicationContainer
 from rag_docs.generation import GenerationError
 
@@ -28,7 +29,7 @@ class GeneratorProfileRequest(BaseModel):
 def create_app(container: ApplicationContainer | Any | None = None) -> FastAPI:
     app = FastAPI(
         title="rag-docs",
-        version="0.1.0",
+        version=__version__,
         description="PoC local de consulta documental con fuentes trazables.",
     )
     app.state.container = container or ApplicationContainer()
