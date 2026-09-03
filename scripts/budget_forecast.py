@@ -5,10 +5,12 @@ anything anywhere. It derives a per-session token baseline for this project and 
 rolling consumption of the current 5-hour window, then prints KPIs and a GO / CAUTION
 / STOP verdict for starting one more task.
 
-The real weekly/5h plan allowance is not machine-readable; set a ceiling in
-``.claude/budget.local.json`` (``{"blockCeiling": 1500000, "weeklyCeiling": 15000000}``)
-from ``/status`` or ``ccusage``. Without it the script uses the largest historical
-5-hour window as a proxy ceiling and lowers the forecast confidence.
+The real weekly/5h plan allowance is not machine-readable. Fastest path: run
+``/status`` and pass what it shows, e.g. ``--session-pct 37 --weekly-pct 4
+--reset-min 48``; the script back-calculates the ceilings from the usage it already
+measured. Alternatively set them once in ``.claude/budget.local.json``
+(``{"blockCeiling": 1500000, "weeklyCeiling": 15000000}``). Without either, it falls
+back to the largest historical 5-hour window as a proxy and lowers confidence.
 """
 
 from __future__ import annotations
@@ -142,6 +144,24 @@ def main() -> int:
         default=0,
         help="Override the estimated cost of the next task, in tokens.",
     )
+    parser.add_argument(
+        "--session-pct",
+        type=float,
+        default=0.0,
+        help="Percent of the 5h session used, from /status. Calibrates blockCeiling.",
+    )
+    parser.add_argument(
+        "--weekly-pct",
+        type=float,
+        default=0.0,
+        help="Percent of the weekly allowance used, from /status. Calibrates weeklyCeiling.",
+    )
+    parser.add_argument(
+        "--reset-min",
+        type=int,
+        default=0,
+        help="Minutes until the 5h session resets, from /status.",
+    )
     args = parser.parse_args()
 
     if not args.projects_dir.is_dir():
@@ -168,7 +188,21 @@ def main() -> int:
     task_cost = args.task_cost or estimate
 
     block_used = _rolling_block(everything, now)
+    week_used = sum(s.tokens for s in everything if s.end >= now - WEEK)
+
+    # A single /status percentage back-calculates the ceiling from measured usage:
+    # ceiling = used / (pct / 100). Other devices inflate the real pct, so a
+    # transcript-only "used" yields a conservative (smaller) ceiling. Good enough.
     block_ceiling = int(config.get("blockCeiling") or 0)
+    weekly_ceiling = int(config.get("weeklyCeiling") or 0)
+    calibrated = False
+    if args.session_pct > 0 and block_used > 0:
+        block_ceiling = round(block_used / (args.session_pct / 100))
+        calibrated = True
+    if args.weekly_pct > 0 and week_used > 0:
+        weekly_ceiling = round(week_used / (args.weekly_pct / 100))
+        calibrated = True
+
     proxy = block_ceiling <= 0
     if proxy:
         block_ceiling = _largest_block(everything)
@@ -176,8 +210,6 @@ def main() -> int:
 
     burn = sum(s.tokens for s in everything if s.end >= now - dt.timedelta(hours=1))
 
-    week_used = sum(s.tokens for s in everything if s.end >= now - WEEK)
-    weekly_ceiling = int(config.get("weeklyCeiling") or 0)
     week_left = max(0, weekly_ceiling - week_used) if weekly_ceiling else 0
 
     headroom = (block_left / task_cost) if task_cost else float("inf")
@@ -188,8 +220,9 @@ def main() -> int:
         verdict = "STOP — el límite semanal no cubre otra tarea"
     elif proxy:
         verdict = (
-            "SIN TECHO FIABLE — pon blockCeiling en .claude/budget.local.json "
-            "(míralo en /status o ccusage); los KPIs de arriba son orientativos"
+            "SIN TECHO FIABLE — pásame los datos de /status con "
+            "--session-pct N --weekly-pct M (o pon blockCeiling en "
+            ".claude/budget.local.json); los KPIs de arriba son orientativos"
         )
     elif headroom >= 2.0:
         verdict = "GO — margen para la siguiente tarea"
@@ -198,8 +231,22 @@ def main() -> int:
     else:
         verdict = "STOP — no empieces otra tarea en este bloque"
 
+    # A block-only STOP/CAUTION is moot if the 5h window resets imminently.
+    if (
+        args.reset_min
+        and 0 < args.reset_min <= 60
+        and not weekly_blocks
+        and verdict.startswith(("STOP", "CAUTION"))
+    ):
+        verdict += f"  ·  o espera {args.reset_min} min al reset del bloque"
+
     used_pct = f"  ({block_used / block_ceiling:.0%})" if block_ceiling else ""
-    proxy_note = "  (proxy: mayor bloque histórico)" if proxy else ""
+    if proxy:
+        proxy_note = "  (proxy: mayor bloque histórico)"
+    elif calibrated:
+        proxy_note = "  (calibrado con /status)"
+    else:
+        proxy_note = ""
     print("== Previsión de presupuesto (Claude Code) ==")
     print(f"Sesiones del proyecto analizadas : {len(mine)} (baseline: {len(baseline)})")
     print(f"Confianza del pronóstico         : {confidence}")
@@ -213,6 +260,8 @@ def main() -> int:
     print(f"  Presupuesto restante en bloque  : {_fmt(block_left)} tok")
     if weekly_ceiling:
         print(f"  Semana: usado / restante        : {_fmt(week_used)} / {_fmt(week_left)} tok")
+    if args.reset_min:
+        print(f"  Reset del bloque en             : {args.reset_min} min")
     print(f"  Ritmo última hora               : {_fmt(burn)} tok/h")
     print(f"  Holgura (restante / coste tarea): {headroom:.1f}x")
     print()

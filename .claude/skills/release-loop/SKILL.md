@@ -46,9 +46,11 @@ Estima el margen restante con la **primera** fuente disponible:
 
 1. **Previsión del repo.** `./scripts/budget.ps1`. Da KPIs (coste típico por tarea,
    consumido/restante en el bloque de 5 h y en la semana, holgura) y un veredicto
-   GO / CAUTION / STOP. Necesita `.claude/budget.local.json` con `blockCeiling`
-   (y opcional `weeklyCeiling`), que se rellena una vez desde `/status`; sin él el
-   veredicto es solo orientativo. Actúa según el veredicto.
+   GO / CAUTION / STOP. Para un veredicto firme necesita los topes reales: pásalos
+   desde `/status` con `./scripts/budget.ps1 --session-pct N --weekly-pct M --reset-min K`
+   (el script deduce los techos) o fíjalos una vez en `.claude/budget.local.json`
+   (`blockCeiling`, opcional `weeklyCeiling`). Sin ninguno, el veredicto es solo
+   orientativo. Actúa según el veredicto.
 2. **Reminder de sesión.** Si en el contexto reciente hay un aviso
    `<total_tokens> … left`, úsalo. Para si cae por debajo del **15 %** del valor que
    había al inicio de esta invocación, o de un suelo absoluto de seguridad.
