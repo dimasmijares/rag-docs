@@ -92,6 +92,20 @@ def test_api_contract_and_web_smoke(tmp_path: Path) -> None:
     assert queried.json()["answer_status"] == "insufficient_evidence"
 
 
+def test_openapi_declares_release_version(tmp_path: Path) -> None:
+    from rag_docs import __version__
+
+    container = SimpleNamespace(
+        source_definitions=[SourceDefinition(id="demo", root=tmp_path)],
+        indexing=FakeIndexing(),
+        query=FakeQuery(),
+    )
+    client = TestClient(create_app(container))
+
+    assert __version__ == "0.2.0"
+    assert client.get("/openapi.json").json()["info"]["version"] == "0.2.0"
+
+
 def test_generator_failure_is_an_explicit_service_error(tmp_path: Path) -> None:
     container = SimpleNamespace(
         source_definitions=[SourceDefinition(id="demo", root=tmp_path)],
