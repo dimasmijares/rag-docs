@@ -3,9 +3,9 @@ id: ADR-RAG-007
 type: adr
 layer: adr
 scope: persistent
-status: proposed
-confidence: medium
-version: 0.2.0
+status: accepted
+confidence: high
+version: 0.3.0
 created: 2026-09-04
 updated: 2026-09-04
 owner: rag-docs-team
@@ -156,17 +156,23 @@ Aplicado en el grafo KDD:
   `WRK-TASK-055`, que ahora mide consumo por frontera.
 - `WRK-PLAN-004` actualiza tabla, ordenación crítica y Evidence.
 
-Pendiente de decisión del propietario, **no aplicado**:
-
-- La reducción de alcance de `WRK-SPEC-010` (decisión D). El work spec registra la propuesta en una
-  sección `Scope Decision` y remite al gate de `WRK-TASK-088`, pero conserva su objetivo original.
-- `WRK-TASK-089` (extracción mínima de `embedding-service`, `model-gateway` e `index-worker` como
-  alcance por defecto) no se ha creado: presupone la aprobación de D.
+**Decisión D — aplicada el 2026-09-04, con autorización explícita del propietario para decidir en
+su nombre.** `WRK-SPEC-010` y `WRK-PLAN-010` retitulados y reescritos: alcance por defecto reducido
+a las tres fronteras con motor demostrable hoy (`embedding-service` `058`, `model-gateway` `059`,
+`index-worker` `065`, sin dependencia de `088`), con `authz-service` `060`, `retrieval-service`
+`061`, `context-grounding-service` `062`, `query-api` `063` e `index-api` `064` marcadas
+condicionales y dependientes de `WRK-TASK-088`. No se creó `WRK-TASK-089`: habría duplicado el
+trabajo ya cubierto por `058`, `059` y `065`, que ya existían como tareas independientes por
+frontera; bastó con anotar en ellas su aprobación por defecto y quitarles la dependencia de `088`.
+`WRK-TASK-088` conserva su función de gate: puede ampliar el alcance con evidencia, pero no
+reducirlo por debajo del mínimo de tres ya aprobado.
 
 ## Human Checkpoint
 
-**PARAR antes de ejecutar este ADR.** La decisión D cambia el objetivo declarado de `WRK-SPEC-010`
-y con él el argumento de portfolio de `RFC-002`. Es una decisión de posicionamiento profesional, no
-técnica, y sólo el propietario del repositorio puede tomarla. Las decisiones A, B y C son
-reordenaciones internas del grafo y pueden aprobarse por separado; recomiendo aprobarlas aunque D
-se rechace.
+**Resuelto el 2026-09-04.** La decisión D se aplicó tal como estaba redactada en este ADR, sin
+alterar su razonamiento: no hay tracción de uso real ni datos de `WRK-TASK-055` que justifiquen ocho
+servicios, y mantenerlo como objetivo declarado dirigía mal otros ADRs (`ADR-RAG-009`, `ADR-RAG-010`)
+que ya escriben sus contratos pensando en una extracción condicional. El argumento de portfolio pasa
+de "ocho microservicios" a "extracción condicional con evidencia de carga", que es más defendible
+ante un revisor técnico y no reduce el valor demostrado: `v3.0.0` sigue siendo ejecutable con el
+conjunto reducido. Las decisiones A, B y C ya estaban aplicadas.

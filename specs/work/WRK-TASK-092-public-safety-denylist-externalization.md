@@ -67,10 +67,12 @@ corpus y gold sets.
   advertencia visible y sigue sin dar falso verde de detección; `scripts/test-public-safety.ps1`
   supera las tres comprobaciones negativas (IPv4 privada, ruta privada candidata, identificador
   derivado sintético).
-- **Decisión sobre el historial de Git: no tomada por este agente, y no ejecutada ninguna acción
-  sobre el historial.** Los cinco identificadores retirados del `HEAD` en este cambio siguen
-  presentes en los commits anteriores del historial público de este repositorio. Retirarlos del
-  historial exige `git filter-repo` (o equivalente), reescritura de hashes, coordinación de force-push
-  y, muy probablemente, invalidar cualquier fork o clon existente — es una decisión que sólo puede
-  tomar el propietario del dato, no una consecuencia automática de este WRK-TASK. Queda como acción
-  pendiente y explícita, no como riesgo aceptado tácitamente.
+- **Decisión sobre el historial de Git: tomada por el propietario el 2026-09-04, ejecutada.** Se
+  reescribió con `git filter-repo --replace-text` sobre un mirror completo (31 commits), sustituyendo
+  los cinco identificadores por marcadores `REDACTED_IDENTIFIER_N` en cada blob donde aparecían.
+  Reescritos y forzados `main`, la rama `codex/adr-rag-007-011-roadmap-realignment` y el tag
+  `v0.2.0`. `main` requirió que el propietario desactivara temporalmente "Do not allow force pushes"
+  en la protección de rama para aceptar el push; se restaura tras el merge de esta PR. Verificado con
+  `git grep` commit a commit sobre un clon limpio recién clonado del remoto: cero coincidencias en
+  todo el historial público tras el push. Residuo aceptado y explícito: cualquier fork o clon hecho
+  antes de esta reescritura conserva los commits antiguos con los identificadores en claro.

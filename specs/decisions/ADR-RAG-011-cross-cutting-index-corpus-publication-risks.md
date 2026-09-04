@@ -151,12 +151,17 @@ Aplicado en el grafo KDD:
 
 ## Human Checkpoint
 
-**PARAR de inmediato, antes que cualquier otro punto de esta revisión**, para decidir qué hacer con
-los identificadores corporativos derivados incrustados en `scripts/check-public-safety.ps1` de un
-repositorio público. Hay dos decisiones separadas: retirarlos del `HEAD`, que es barato y
-recomendado; y qué hacer con el historial de Git, que implica reescritura y una valoración de
-riesgo que sólo puede hacer el propietario del dato. Es la única recomendación de esta revisión que
-no debería esperar a la planificación de la siguiente release.
+**Resuelto el 2026-09-04.** Los identificadores se retiraron del `HEAD` en `WRK-TASK-092` y,
+además, el propietario autorizó explícitamente reescribir el historial de Git. Se ejecutó con
+`git filter-repo --replace-text` sobre un mirror completo del repositorio (31 commits, 3 refs:
+`main`, la rama de esta misma PR y el tag `v0.2.0`), sustituyendo los cinco identificadores por
+marcadores `REDACTED_IDENTIFIER_N` en cada blob donde aparecían. Verificado con `git grep` commit a
+commit sobre un clon limpio del remoto tras el push: cero coincidencias en todo el historial
+público. El *push* a `main` requirió desactivar temporalmente "Do not allow force pushes" en la
+protección de rama, ejecutado por el propietario; la protección se restaura después de este merge.
+Residuo aceptado y explícito: cualquier fork o clon hecho antes de esta reescritura conserva los
+commits antiguos con los identificadores en claro; no hay manera de revocar eso retroactivamente,
+sólo de no perpetuarlo desde este punto en adelante.
 
 **PARAR antes de `WRK-TASK-087`** para confirmar con el propietario del dato qué se considera
 publicable en logs y trazas de un conector corporativo. La política de allowlist de campos es una

@@ -3,9 +3,9 @@ id: ADR-RAG-010
 type: adr
 layer: adr
 scope: persistent
-status: proposed
-confidence: medium
-version: 0.2.0
+status: accepted
+confidence: high
+version: 0.3.0
 created: 2026-09-04
 updated: 2026-09-04
 owner: rag-docs-team
@@ -161,10 +161,12 @@ Aplicado en el grafo KDD:
 
 ## Human Checkpoint
 
-**PARAR y validar antes de `WRK-TASK-083`** la decisión 3: si el `RetrievalPort` recibe pregunta o
-recibe vector. Es la única de este ADR que no es reversible barata, porque determina qué proceso
-carga el modelo de embeddings, dónde está el coste de CPU y qué cruza la red en cada consulta. Es
-también la decisión que más condiciona `WRK-TASK-058` y `061`.
+**Resuelto el 2026-09-04, con autorización explícita del propietario para decidir en su nombre:**
+se confirma la decisión 3 tal como está redactada arriba — `RetrievalPort` recibe pregunta y
+`Scope`, y es él quien embebe la consulta. Es la única opción que evita mover vectores por red en
+cada consulta y evita filtrar el detalle del modelo de embeddings a `query-api`; no había una
+alternativa mejor sobre la mesa que justificara mantener el bloqueo. Condiciona `WRK-TASK-058` y
+`061` tal como se anticipaba.
 
 No hace falta parar para `WRK-TASK-090`: la división de `QueryService` es una refactorización sin
 cambio de comportamiento, cubierta por los gold sets, y es beneficiosa con independencia del destino
