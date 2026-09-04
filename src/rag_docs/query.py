@@ -2,9 +2,15 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from dataclasses import asdict, dataclass, field
 from typing import Literal
 
+from rag_docs.contracts import (
+    AnswerClaim,
+    Citation,
+    QueryResult,
+    RetrievalDiagnostic,
+    SearchHit,
+)
 from rag_docs.embeddings import Embedder
 from rag_docs.generation import (
     GeneratedClaim,
@@ -18,58 +24,15 @@ from rag_docs.language import (
     infer_question_language,
     text_matches_language,
 )
-from rag_docs.models import SearchHit
 from rag_docs.vector_store import VectorStore
 
-
-@dataclass(frozen=True, slots=True)
-class Citation:
-    reference: int
-    source_id: str
-    file_name: str
-    original_uri: str
-    relative_path: str
-    locator: dict[str, str | int]
-    section: str | None
-    snippet: str
-    score: float
-
-
-@dataclass(frozen=True, slots=True)
-class AnswerClaim:
-    text: str
-    citations: list[int]
-
-
-@dataclass(frozen=True, slots=True)
-class RetrievalDiagnostic:
-    rank: int
-    score: float
-    chunk_id: str
-    document_id: str
-    source_id: str
-    relative_path: str
-    locator: dict[str, str | int]
-    section: str | None
-    selected: bool
-    context_rank: int | None
-    discard_reason: Literal["duplicate_chunk", "equivalent_document", "context_limit"] | None
-
-
-@dataclass(frozen=True, slots=True)
-class QueryResult:
-    answer_status: Literal["grounded", "insufficient_evidence"]
-    answer: str
-    citations: list[Citation]
-    model: str | None
-    embedding_model: str
-    answer_language: SupportedLanguage
-    claims: list[AnswerClaim]
-    generation_mode: Literal["llm", "extractive_fallback", "none"]
-    retrieval_diagnostics: list[RetrievalDiagnostic] = field(default_factory=list)
-
-    def model_dump(self) -> dict:
-        return asdict(self)
+__all__ = [
+    "AnswerClaim",
+    "Citation",
+    "QueryResult",
+    "QueryService",
+    "RetrievalDiagnostic",
+]
 
 
 class QueryService:

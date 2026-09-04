@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any, Literal
 
@@ -10,7 +11,16 @@ from pydantic import BaseModel, Field
 
 from rag_docs import __version__
 from rag_docs.container import ApplicationContainer
-from rag_docs.generation import GenerationError
+from rag_docs.contracts import AppError, ErrorKind, http_status_for
+from rag_docs.generation import GenerationError, InvalidGeneratedResponse
+
+logger = logging.getLogger(__name__)
+
+
+def _error(kind: ErrorKind, message: str) -> HTTPException:
+    """Map the closed ``ErrorKind`` taxonomy to an HTTP response without ever
+    filtering an internal exception's text to the client (``ADR-RAG-010``)."""
+    return HTTPException(status_code=http_status_for(kind), detail=message)
 
 
 class IndexRequest(BaseModel):
@@ -63,11 +73,14 @@ def create_app(container: ApplicationContainer | Any | None = None) -> FastAPI:
             source_ids = request.source_ids if request else None
             return app.state.container.indexing.index(source_ids).model_dump()
         except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+            raise _error(ErrorKind.VALIDATION, str(exc)) from exc
+        except AppError as exc:
+            raise _error(exc.kind, exc.message) from exc
         except Exception as exc:
-            raise HTTPException(
-                status_code=503,
-                detail=f"No se pudo completar la indexación: {exc}",
+            logger.exception("No se pudo completar la indexación")
+            raise _error(
+                ErrorKind.DEPENDENCY_UNAVAILABLE,
+                "No se pudo completar la indexación.",
             ) from exc
 
     @app.post("/api/query")
@@ -75,13 +88,18 @@ def create_app(container: ApplicationContainer | Any | None = None) -> FastAPI:
         try:
             return app.state.container.query.query(request.question).model_dump()
         except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+            raise _error(ErrorKind.VALIDATION, str(exc)) from exc
+        except InvalidGeneratedResponse as exc:
+            raise _error(ErrorKind.INVALID_MODEL_OUTPUT, str(exc)) from exc
         except GenerationError as exc:
-            raise HTTPException(status_code=503, detail=str(exc)) from exc
+            raise _error(ErrorKind.DEPENDENCY_UNAVAILABLE, str(exc)) from exc
+        except AppError as exc:
+            raise _error(exc.kind, exc.message) from exc
         except Exception as exc:
-            raise HTTPException(
-                status_code=503,
-                detail=f"No se pudo consultar el índice: {exc}",
+            logger.exception("No se pudo consultar el índice")
+            raise _error(
+                ErrorKind.DEPENDENCY_UNAVAILABLE,
+                "No se pudo consultar el índice.",
             ) from exc
 
     @app.get("/api/generator")
@@ -93,9 +111,9 @@ def create_app(container: ApplicationContainer | Any | None = None) -> FastAPI:
         try:
             return app.state.container.check_generator_profile(request.profile)
         except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+            raise _error(ErrorKind.VALIDATION, str(exc)) from exc
         except GenerationError as exc:
-            raise HTTPException(status_code=503, detail=str(exc)) from exc
+            raise _error(ErrorKind.DEPENDENCY_UNAVAILABLE, str(exc)) from exc
 
     @app.post("/api/generator/activate")
     def activate_generator(request: GeneratorProfileRequest) -> dict[str, Any]:
@@ -105,9 +123,9 @@ def create_app(container: ApplicationContainer | Any | None = None) -> FastAPI:
                 request.model,
             )
         except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+            raise _error(ErrorKind.VALIDATION, str(exc)) from exc
         except GenerationError as exc:
-            raise HTTPException(status_code=503, detail=str(exc)) from exc
+            raise _error(ErrorKind.DEPENDENCY_UNAVAILABLE, str(exc)) from exc
 
     return app
 
