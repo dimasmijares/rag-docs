@@ -54,6 +54,10 @@ class ApplicationContainer:
             self.settings.chunk_tokens,
             self.settings.chunk_overlap,
         )
+        # Bind the fingerprint eagerly, not only when indexing runs: a
+        # query-only process must reject a mismatched index just as
+        # explicitly as a write would (RULE-004).
+        self.store.bind_fingerprint(self.indexing.fingerprint)
         self.query = QueryService(
             self.embedder,
             self.store,

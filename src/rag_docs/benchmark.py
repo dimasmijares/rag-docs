@@ -152,6 +152,22 @@ class TimedEmbedder:
     def model_name(self) -> str:
         return self.wrapped.model_name
 
+    @property
+    def revision(self) -> str | None:
+        return self.wrapped.revision
+
+    @property
+    def query_prefix(self) -> str:
+        return self.wrapped.query_prefix
+
+    @property
+    def passage_prefix(self) -> str:
+        return self.wrapped.passage_prefix
+
+    @property
+    def normalize(self) -> bool:
+        return self.wrapped.normalize
+
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         return self.wrapped.embed_documents(texts)
 
@@ -168,14 +184,17 @@ class TimedStore:
         self.wrapped = wrapped
         self.recorder = recorder
 
-    def ensure_collection(self, vector_size: int) -> None:
-        self.wrapped.ensure_collection(vector_size)
+    def ensure_collection(self, vector_size: int, fingerprint=None) -> None:
+        self.wrapped.ensure_collection(vector_size, fingerprint)
 
     def list_documents(self, source_ids: set[str]):
         return self.wrapped.list_documents(source_ids)
 
     def delete_document(self, document_id: str) -> None:
         self.wrapped.delete_document(document_id)
+
+    def prune_document(self, document_id: str, keep_chunk_ids: set[str]) -> None:
+        self.wrapped.prune_document(document_id, keep_chunk_ids)
 
     def upsert(self, chunks, vectors) -> None:
         self.wrapped.upsert(chunks, vectors)

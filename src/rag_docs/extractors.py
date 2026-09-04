@@ -6,6 +6,10 @@ from pathlib import Path
 
 from rag_docs.models import DocumentCandidate, ExtractedUnit
 
+# Bump when the extraction logic changes what text a document yields for the
+# same bytes: it is one of the components IndexFingerprint covers (RULE-004).
+EXTRACTOR_VERSION = "extractors-v1"
+
 
 class ExtractionError(RuntimeError):
     pass

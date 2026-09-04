@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 
+from rag_docs.contracts import IndexFingerprint
 from rag_docs.generation import (
     GeneratedClaim,
     GeneratedResponse,
@@ -14,6 +15,10 @@ from rag_docs.models import DocumentChunk, IndexedDocument, SearchHit
 class FakeEmbedder:
     dimension = 3
     model_name = "fake-multilingual"
+    revision = None
+    query_prefix = "query: "
+    passage_prefix = "passage: "
+    normalize = True
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         return [[float(len(text)), 1.0, 0.0] for text in texts]
@@ -28,9 +33,13 @@ class FakeVectorStore:
         self.chunks: dict[str, list[DocumentChunk]] = {}
         self.hits: list[SearchHit] = []
         self.vector_size: int | None = None
+        self.fingerprint: IndexFingerprint | None = None
 
-    def ensure_collection(self, vector_size: int) -> None:
+    def ensure_collection(
+        self, vector_size: int, fingerprint: IndexFingerprint | None = None
+    ) -> None:
         self.vector_size = vector_size
+        self.fingerprint = fingerprint
 
     def list_documents(self, source_ids: set[str]) -> dict[str, IndexedDocument]:
         return {
@@ -42,6 +51,15 @@ class FakeVectorStore:
     def delete_document(self, document_id: str) -> None:
         self.documents.pop(document_id, None)
         self.chunks.pop(document_id, None)
+
+    def prune_document(self, document_id: str, keep_chunk_ids: set[str]) -> None:
+        remaining = [
+            chunk for chunk in self.chunks.get(document_id, []) if chunk.chunk_id in keep_chunk_ids
+        ]
+        if remaining:
+            self.chunks[document_id] = remaining
+        else:
+            self.delete_document(document_id)
 
     def upsert(self, chunks: list[DocumentChunk], vectors: list[list[float]]) -> None:
         assert len(chunks) == len(vectors)
