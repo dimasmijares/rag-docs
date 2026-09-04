@@ -35,6 +35,10 @@ Excluye streaming, feedback y conversación, que se implementan en `WRK-TASK-041
 - [ ] Se establecen baselines de indexación y consulta con p50/p95.
 - [ ] La indexación larga expone progreso y no bloquea una petición HTTP.
 - [ ] Las cachés se invalidan por versión de índice, modelo y prompt.
+- [ ] Toda caché posterior al retrieval se particiona por ámbito de autorización desde su diseño;
+      sólo la caché de embeddings de consulta, independiente del principal, se comparte.
+- [ ] El benchmark se ejecuta sobre colección dedicada y ledger vacío, y el informe registra si hubo
+      reutilización de estado persistente.
 - [ ] Una prueba demuestra que la indexación no bloquea las peticiones HTTP.
 
 ## Evidence

@@ -19,9 +19,11 @@ tags: [release-plan, v2.0.0, connectors, observability, resilience]
 
 ## Task Decomposition
 
-`050 → 018 → 051` desarrolla conectores; `019 → 052` instrumenta y despliega observabilidad;
-`053/054` endurecen operación y `055 → 056` valida SLO, fallos y release.
+`050 → 018 → 051` desarrolla conectores y `050 → 087` fija sus controles de publicación;
+`019 → 052` instrumenta y despliega observabilidad; `053/054` endurecen operación y
+`055 → 088 → 056` valida SLO y fallos y decide con evidencia el alcance de `v2.5.0`.
 
 ## Gate
 
-Conector simulado en CI, observabilidad privada, restore probado y capacidad documentada.
+Conector simulado en CI, observabilidad privada, restore probado, capacidad documentada y alcance
+de extracción de servicios decidido con evidencia.

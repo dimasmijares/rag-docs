@@ -22,13 +22,12 @@ tags: [release, v1.1.0, retrieval, multimodal]
 
 ## Proposed Change
 
-Versionar el índice por fingerprint, medir dense/hybrid/reranking y añadir OCR, imágenes, tablas y
-visión condicional preservando provenance.
+Añadir OCR, imágenes, tablas y visión condicional preservando provenance, sobre el fingerprint y la
+baseline de calidad ya establecidos en `v0.3.0`.
 
 ## Acceptance Criteria
 
-- [ ] Cambios incompatibles publican una colección nueva mediante alias.
-- [ ] Hybrid y reranking sólo se adoptan si superan el baseline.
+- [ ] El corpus multimodal se publica como versión aditiva y conserva la anterior.
 - [ ] OCR y visión conservan localizador y coordenadas.
 - [ ] Streaming sólo se marca grounded tras validación final.
 

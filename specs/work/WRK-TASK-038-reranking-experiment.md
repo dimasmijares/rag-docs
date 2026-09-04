@@ -5,11 +5,11 @@ layer: work-task
 scope: ephemeral
 status: draft
 confidence: low
-version: 0.1.0
+version: 0.2.0
 created: 2026-09-01
-updated: 2026-09-01
+updated: 2026-09-04
 owner: rag-docs-team
-parent: WRK-PLAN-007
+parent: WRK-PLAN-012
 activates: [ARCH-002, DOM-RAG-001, FEAT-RAG-001]
 dependencies:
   - id: WRK-TASK-037

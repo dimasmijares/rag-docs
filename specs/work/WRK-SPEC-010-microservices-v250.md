@@ -21,6 +21,8 @@ dependencies:
     relation: depends-on
   - id: ADR-006
     relation: depends-on
+  - id: ADR-RAG-010
+    relation: depends-on
 tags: [release, v2.5.0, microservices, contracts]
 ---
 
@@ -28,8 +30,16 @@ tags: [release, v2.5.0, microservices, contracts]
 
 ## Proposed Change
 
-Extraer ocho servicios con contratos `/v1`, imágenes, health checks, seguridad servicio a servicio
-y trazas distribuidas.
+Extraer servicios con contratos `/v1`, imágenes, health checks, seguridad servicio a servicio y
+trazas distribuidas.
+
+## Scope Decision
+
+El número de servicios a extraer queda pendiente del gate de `WRK-TASK-088`, que evalúa cada una de
+las ocho fronteras de `ARCH-002` contra la evidencia de carga y SLO de `WRK-TASK-055`. `ADR-RAG-007`
+propone reducir el alcance por defecto a las fronteras con motor demostrable y mantener el resto
+como contrato en proceso; esa propuesta está pendiente de decisión del propietario y no se ha
+aplicado a este work spec.
 
 ## Acceptance Criteria
 

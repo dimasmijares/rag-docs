@@ -14,6 +14,8 @@ activates: [ARCH-002, DOM-RAG-002, FEAT-RAG-003, DOC-RAG-002, RULE-002, RULE-003
 dependencies:
   - id: WRK-TASK-048
     relation: depends-on
+  - id: WRK-TASK-085
+    relation: depends-on
 tags: [release, v1.5.0, oidc, security]
 ---
 
@@ -28,6 +30,8 @@ Ejecutar E2E con varios usuarios, confirmar fail-closed y consolidar `v1.5.0`.
 - [ ] Login OIDC y consultas autorizadas funcionan end-to-end.
 - [ ] Denegaciones no filtran contenido ni existencia.
 - [ ] El modo inseguro no arranca en configuración productiva.
+- [ ] El re-baseline de calidad y latencia tras activar el prefiltrado está publicado y se declara
+      explícitamente que las cifras anteriores no son comparables.
 - [ ] `WRK-SPEC-008` se consolida antes de la release.
 
 ## Evidence

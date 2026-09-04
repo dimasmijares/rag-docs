@@ -19,8 +19,10 @@ tags: [release-plan, v1.5.0, oidc, acl]
 
 ## Task Decomposition
 
-`017` define identidad; `043/044` preparan ACL e IdP; `045 → 046 → 047 → 048 → 049`
-valida autenticación, autorización, aislamiento, threat model y release.
+`017` define identidad sobre el modelo de datos de `WRK-TASK-082`; `043/044` propagan ACL y
+preparan el IdP; `045 → 046 → 047 → 048 → 049` valida autenticación, autorización, aislamiento,
+threat model y release. `085` re-baseliniza evaluación y benchmark tras activar el prefiltrado y
+es prerrequisito de `049`.
 
 ## Gate
 
