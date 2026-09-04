@@ -10,12 +10,31 @@ class Embedder(Protocol):
     @property
     def model_name(self) -> str: ...
 
+    @property
+    def revision(self) -> str | None: ...
+
+    @property
+    def query_prefix(self) -> str: ...
+
+    @property
+    def passage_prefix(self) -> str: ...
+
+    @property
+    def normalize(self) -> bool: ...
+
     def embed_documents(self, texts: list[str]) -> list[list[float]]: ...
 
     def embed_query(self, text: str) -> list[float]: ...
 
 
 class SentenceTransformerEmbedder:
+    #: e5-family convention. Previously hard-coded inline in ``embed_documents``
+    #: / ``embed_query`` where ``IndexFingerprint`` could not observe it
+    #: (``ADR-RAG-010``); now exposed so the fingerprint covers it.
+    passage_prefix = "passage: "
+    query_prefix = "query: "
+    normalize = True
+
     def __init__(
         self, model_name: str, batch_size: int = 16, revision: str | None = None
     ) -> None:
@@ -47,17 +66,19 @@ class SentenceTransformerEmbedder:
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         if not texts:
             return []
-        prefixed = [f"passage: {text}" for text in texts]
+        prefixed = [f"{self.passage_prefix}{text}" for text in texts]
         vectors = self._load().encode(
             prefixed,
             batch_size=self.batch_size,
-            normalize_embeddings=True,
+            normalize_embeddings=self.normalize,
             show_progress_bar=False,
         )
         return vectors.tolist()
 
     def embed_query(self, text: str) -> list[float]:
         vector = self._load().encode(
-            f"query: {text}", normalize_embeddings=True, show_progress_bar=False
+            f"{self.query_prefix}{text}",
+            normalize_embeddings=self.normalize,
+            show_progress_bar=False,
         )
         return vector.tolist()

@@ -32,8 +32,10 @@ automática, colección versionada, validación previa y cambio atómico de alia
 
 ## Enforcement
 
-- El fingerprint se persiste y comprueba antes de escribir o consultar.
-- No se actualizan vectores incompatibles dentro de una colección existente.
-- La migración mantiene rollback hasta superar el gold set.
-- Mientras no exista enforcement automático, README y configuración deben advertir que un cambio
-  incompatible exige otra colección.
+- El fingerprint se persiste y comprueba antes de escribir o consultar
+  (`QdrantVectorStore.ensure_collection`/`bind_fingerprint`/`verify_fingerprint`, `WRK-TASK-036`).
+- No se actualizan vectores incompatibles dentro de una colección existente: `ensure_collection`
+  rechaza con `AppError(ErrorKind.VALIDATION)` si el alias ya apunta a otra colección física.
+- La migración (`indexing.migrate_and_publish`) sólo mueve el alias tras validar la colección
+  candidata; el rollback (`rollback_alias`) dispone de la colección anterior hasta que
+  `delete_physical` cierra la ventana explícitamente.
