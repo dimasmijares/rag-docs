@@ -11,9 +11,11 @@ updated: 2026-09-01
 owner: rag-docs-team
 activates: [ARCH-002, DOM-RAG-002, FEAT-RAG-002, DOC-RAG-002, RULE-001, RULE-002, RULE-004]
 dependencies:
-  - id: WRK-SPEC-005
+  - id: WRK-SPEC-012
     relation: depends-on
   - id: ADR-003
+    relation: depends-on
+  - id: ADR-RAG-008
     relation: depends-on
 tags: [release, v1.0.0, jobs, compose]
 ---
@@ -31,6 +33,9 @@ ofrecer API y web de progreso en un Compose que no requiera Python en el host.
 - [ ] Reinicios de API, Redis o worker no pierden jobs ni duplican efectos.
 - [ ] Redis sólo transporta identificadores y PostgreSQL conserva el estado crítico.
 - [ ] El Compose completo supera la indexación no bloqueante.
+- [ ] PostgreSQL es el único recurso transaccional y el ledger documental es la fuente de qué
+      está indexado.
+- [ ] El esquema nace multi-tenant y no requiere migración transversal en `v1.5.0`.
 
 ## Evidence
 

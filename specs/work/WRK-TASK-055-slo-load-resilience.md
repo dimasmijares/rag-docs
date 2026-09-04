@@ -35,6 +35,8 @@ Definir SLO, alertas y capacidad y ensayar cinco usuarios, dos workers y fallos 
 - [ ] Sin LLM, p95 del pipeline medido cumple el objetivo definido.
 - [ ] 1.000 chunks sintéticos se indexan en menos de 10 minutos en el portátil.
 - [ ] Alertas responden a fallos y saturación sin registrar contenido.
+- [ ] Se mide el consumo de CPU, memoria y latencia por frontera de `ARCH-002`, de forma que
+      `WRK-TASK-088` pueda decidir la extracción de servicios con evidencia y no por supuesto.
 
 ## Evidence
 

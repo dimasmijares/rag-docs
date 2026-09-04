@@ -6,6 +6,45 @@ param(
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 
+function Get-DerivedIdentifierPattern {
+    # Los identificadores corporativos derivados nunca viven en claro en este script.
+    # Fuente 1 (CI): variable de entorno PUBLIC_SAFETY_IDENTIFIERS, cargada desde un
+    # secreto, con los identificadores separados por '|'.
+    # Fuente 2 (local): config/public-safety-identifiers.local.txt, ignorado por Git
+    # (coincide con el patrón config/**/*.local.* de .gitignore), un identificador por
+    # línea. Ver config/public-safety-identifiers.example.txt para el formato.
+    $identifiers = [System.Collections.Generic.List[string]]::new()
+
+    $envValue = $env:PUBLIC_SAFETY_IDENTIFIERS
+    if (-not [string]::IsNullOrWhiteSpace($envValue)) {
+        foreach ($item in $envValue -split '\|') {
+            if (-not [string]::IsNullOrWhiteSpace($item)) {
+                $identifiers.Add($item.Trim())
+            }
+        }
+    }
+
+    $localFile = Join-Path $projectRoot 'config/public-safety-identifiers.local.txt'
+    if (Test-Path -LiteralPath $localFile) {
+        foreach ($line in Get-Content -LiteralPath $localFile) {
+            $trimmed = $line.Trim()
+            if ($trimmed -and -not $trimmed.StartsWith('#')) {
+                $identifiers.Add($trimmed)
+            }
+        }
+    }
+
+    if ($identifiers.Count -eq 0) {
+        Write-Warning ('Gate de publicación: sin lista de identificadores derivados cargada ' +
+            '(ni PUBLIC_SAFETY_IDENTIFIERS ni config/public-safety-identifiers.local.txt). ' +
+            'El gate no puede detectar identificadores corporativos derivados en esta ejecución.')
+        return $null
+    }
+
+    $escaped = $identifiers | Sort-Object -Unique | ForEach-Object { [regex]::Escape($_) }
+    return '(?i)(' + ($escaped -join '|') + ')'
+}
+
 Push-Location $projectRoot
 try {
     if ($PSBoundParameters.ContainsKey('Paths')) {
@@ -43,7 +82,10 @@ try {
     $contentPatterns = [ordered]@{
         'ruta personal de Windows' = '(?i)C:\\Users\\[^\\\r\n]+'
         'IPv4 privada' = '(?<![0-9])(?:10\.(?:[0-9]{1,3}\.){2}[0-9]{1,3}|192\.168\.(?:[0-9]{1,3}\.)[0-9]{1,3}|172\.(?:1[6-9]|2[0-9]|3[01])\.(?:[0-9]{1,3}\.)[0-9]{1,3})(?![0-9])'
-        'identificador derivado conocido' = '(?i)(REDACTED_IDENTIFIER_1|REDACTED_IDENTIFIER_2|REDACTED_IDENTIFIER_3|REDACTED_IDENTIFIER_4|REDACTED_IDENTIFIER_5)'
+    }
+    $derivedIdentifierPattern = Get-DerivedIdentifierPattern
+    if ($null -ne $derivedIdentifierPattern) {
+        $contentPatterns['identificador derivado conocido'] = $derivedIdentifierPattern
     }
 
     foreach ($path in $candidateFiles) {

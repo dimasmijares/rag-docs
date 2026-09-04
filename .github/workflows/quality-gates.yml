@@ -71,6 +71,8 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Reject private paths and identifiers
         shell: pwsh
+        env:
+          PUBLIC_SAFETY_IDENTIFIERS: ${{ secrets.PUBLIC_SAFETY_IDENTIFIERS }}
         run: scripts/check-public-safety.ps1
       - name: Verify negative fixtures are rejected
         shell: pwsh

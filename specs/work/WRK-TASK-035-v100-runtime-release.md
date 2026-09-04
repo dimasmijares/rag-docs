@@ -27,7 +27,9 @@ Validar reinicios, reconciliación, integración completa y consolidar `v1.0.0`.
 
 ## Acceptance Criteria
 
-- [ ] E2E reinicia API, Redis y worker sin perder el job.
+- [ ] E2E reinicia API, Redis y worker sin perder el job ni duplicar efectos.
+- [ ] Una prueba de interrupción entre el `ack` del vector store y el commit del ledger demuestra
+      convergencia tras el siguiente intento.
 - [ ] Compose funciona desde un host sin Python.
 - [ ] Rendimiento y errores se comparan con la baseline pública.
 - [ ] `WRK-SPEC-006` se consolida antes de la release.

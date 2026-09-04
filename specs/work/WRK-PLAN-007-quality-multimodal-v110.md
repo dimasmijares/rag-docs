@@ -19,8 +19,12 @@ tags: [release-plan, v1.1.0, retrieval, multimodal]
 
 ## Task Decomposition
 
-`036 → 037 → 038`; en paralelo tras `035`, `013 → 039 → 040`. `041` depende del baseline
-de rendimiento y `042` consolida los experimentos que forman el gate de la release.
+`013 → 039 → 040` tras `035`. `041` depende del baseline de rendimiento y `042` consolida los
+experimentos que forman el gate de la release.
+
+`036`, `037` y `038` se trasladaron a `WRK-PLAN-012` (`v0.3.0`) por `ADR-RAG-007`: el fingerprint
+es prerrequisito del ledger de `v1.0.0` y del payload ACL de `v1.5.0`, y la evidencia de calidad
+debe preceder a la decisión de industrializar, no seguirla.
 
 `WRK-TASK-081` conserva como línea independiente y no bloqueante la comparación 3B/14B en el PC
 personal. Sólo queda preparada después de cerrar `v0.2.0` y no publica resultados hasta disponer
@@ -28,4 +32,5 @@ del equipo remoto autorizado.
 
 ## Gate
 
-Ninguna técnica avanzada permanece sin mejora medida; toda evidencia visual conserva provenance.
+Toda evidencia visual conserva provenance y el corpus multimodal se publica como versión aditiva,
+conservando la anterior como serie de regresión.

@@ -15,6 +15,8 @@ dependencies:
     relation: depends-on
   - id: ADR-004
     relation: depends-on
+  - id: ADR-RAG-009
+    relation: depends-on
 tags: [release, v1.5.0, oidc, acl]
 ---
 
@@ -31,6 +33,8 @@ antes del retrieval.
 - [ ] Casos multiusuario y multitenant prueban aislamiento sin canales laterales.
 - [ ] Colecciones previas se reconstruyen con tenant y ACL.
 - [ ] Cambiar de IdP sólo requiere configuración estándar OIDC.
+- [ ] El coste de la autorización sobre calidad y latencia se mide por separado de cualquier otra
+      variación, con curvas por selectividad de filtro.
 
 ## Evidence
 

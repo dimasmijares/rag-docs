@@ -42,6 +42,20 @@ try {
     Assert-GateFails -Paths $relativeFixture -ExpectedMessage 'IPv4 privada'
     Assert-GateFails -Paths ('logs/' + 'synthetic-fixture.json') -ExpectedMessage 'ruta privada candidata'
 
+    $identifierFixture = Join-Path $testRoot 'derived-identifier.txt'
+    $syntheticIdentifier = 'SYNTHETIC_DERIVED_IDENTIFIER_' + 'FOR_TEST'
+    Set-Content -LiteralPath $identifierFixture -Value "reference $syntheticIdentifier here" -Encoding utf8
+    $relativeIdentifierFixture = [System.IO.Path]::GetRelativePath($projectRoot, $identifierFixture)
+
+    $previousEnvValue = $env:PUBLIC_SAFETY_IDENTIFIERS
+    $env:PUBLIC_SAFETY_IDENTIFIERS = $syntheticIdentifier
+    try {
+        Assert-GateFails -Paths $relativeIdentifierFixture -ExpectedMessage 'identificador derivado conocido'
+    }
+    finally {
+        $env:PUBLIC_SAFETY_IDENTIFIERS = $previousEnvValue
+    }
+
     Write-Host 'Pruebas negativas del gate de publicación superadas.'
 }
 finally {

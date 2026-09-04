@@ -19,9 +19,14 @@ tags: [release-plan, v1.0.0, jobs, compose]
 
 ## Task Decomposition
 
-`030 → 015 → 031 → 032`, con `033` tras `030`; `016` integra `031/033`, `034` depende de
+`030 → 015 → 031 → 084 → 032`, con `033` tras `030`; `016` integra `031/033`, `034` depende de
 `015`, `014` valida `016/034` y `035` consolida `014/032`.
+
+`030` entra sólo con `v0.3.0` cerrada: depende de `WRK-TASK-091` y del modelo de tenant de
+`WRK-TASK-082`, de modo que el esquema nace multi-tenant. `084` fija el contrato de idempotencia
+que `031` implementa y del que `032` depende para reconciliar.
 
 ## Gate
 
-Jobs durables, mensajes sin documentos y Compose completo sin Python en el host.
+Jobs durables, mensajes sin documentos, efectos convergentes ante interrupción y Compose completo
+sin Python en el host.

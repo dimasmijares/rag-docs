@@ -23,14 +23,21 @@ tags: [authorization, fail-closed, retrieval, qdrant]
 
 ## Objective
 
-Calcular un ámbito fail-closed y aplicarlo obligatoriamente en la consulta a Qdrant.
+Sustituir el ámbito de un solo tenant de `WRK-TASK-082` por la resolución real de política desde el
+principal validado, y retirar la excepción transitoria de `RULE-003`.
 
 ## Acceptance Criteria
 
-- [ ] Sin principal o política válida no se consulta el índice.
-- [ ] Tenant y ACL forman parte del filtro del vector store.
-- [ ] Errores no revelan existencia documental.
-- [ ] Ningún caller puede omitir el filtro autorizado.
+- [ ] Sin principal o política válida no se consulta el índice, ni en producción ni en desarrollo.
+- [ ] La indisponibilidad del almacén de políticas es denegación, nunca continuación con ámbito
+      vacío ni con ámbito por defecto.
+- [ ] Tenant, sujetos y clasificación forman parte del filtro enviado al vector store como
+      prefiltro; no existe ninguna ruta de post-filtrado.
+- [ ] Errores, conteos y diagnósticos no revelan existencia documental: una denegación es
+      indistinguible de una ausencia de evidencia.
+- [ ] Ningún caller puede omitir el filtro autorizado, garantizado por la firma obligatoria de
+      ámbito introducida en `WRK-TASK-082`.
+- [ ] La excepción transitoria de `RULE-003` queda retirada y la regla actualizada.
 
 ## Evidence
 

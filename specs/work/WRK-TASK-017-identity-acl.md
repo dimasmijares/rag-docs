@@ -5,14 +5,16 @@ layer: work-task
 scope: ephemeral
 status: draft
 confidence: low
-version: 0.1.0
+version: 0.2.0
 created: 2026-08-30
-updated: 2026-09-01
+updated: 2026-09-04
 owner: rag-docs-team
 parent: WRK-PLAN-008
 activates: [ARCH-002, DOM-RAG-002, FEAT-RAG-003, RULE-001, RULE-002, RULE-003]
 dependencies:
   - id: WRK-TASK-042
+    relation: depends-on
+  - id: WRK-TASK-082
     relation: depends-on
 tags: [identity, authorization, acl, security]
 ---

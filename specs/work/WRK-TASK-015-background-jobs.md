@@ -27,8 +27,13 @@ Exponer recursos persistentes para crear, consultar, cancelar y reintentar jobs 
 
 - [ ] Crear, consultar, cancelar y reintentar jobs idempotentes.
 - [ ] `POST /api/index` devuelve `202` y un `JobResource` persistido.
-- [ ] Listado y detalle exponen progreso, timestamps y errores estructurados.
+- [ ] `POST /api/index` acepta `Idempotency-Key`; repetir la petición con la misma clave devuelve el
+      mismo `JobResource` y nunca crea un job nuevo.
+- [ ] Listado y detalle exponen progreso, timestamps y errores estructurados según la taxonomía
+      `ErrorKind` de `WRK-TASK-083`.
 - [ ] La API no ejecuta extracción ni embeddings dentro de la petición.
+- [ ] La ruptura de compatibilidad respecto de la respuesta síncrona de `v0.2.0` queda documentada,
+      con la decisión explícita sobre qué ofrece la demo pública durante la transición.
 
 ## Evidence
 

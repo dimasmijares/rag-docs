@@ -1,0 +1,57 @@
+---
+id: WRK-TASK-083
+type: spec
+layer: work-task
+scope: ephemeral
+status: draft
+confidence: medium
+version: 0.1.0
+created: 2026-09-04
+updated: 2026-09-04
+owner: rag-docs-team
+parent: WRK-PLAN-012
+activates: [ARCH-002, DOM-RAG-002, DOC-RAG-002, RULE-003, RULE-004]
+dependencies:
+  - id: WRK-TASK-029
+    relation: depends-on
+  - id: ADR-RAG-010
+    relation: depends-on
+tags: [contracts, ports, value-objects, errors, boundaries]
+---
+
+# WRK-TASK-083 — Contratos de puertos internos
+
+## Objective
+
+Crear `rag_docs.contracts` con los objetos de valor y los puertos que definen los límites de
+`ARCH-002`, de modo que la extracción posterior a servicios sea la implementación de un adaptador y
+no una reescritura.
+
+## File Scope
+
+Incluye el paquete `rag_docs/contracts/**`, el traslado de los DTO existentes, la firma de los
+puertos, el mapeo de la taxonomía de errores en `api.py` y sus tests. Excluye cualquier cambio de
+comportamiento observable, transporte HTTP entre servicios, autenticación entre servicios y
+contract tests de red, que permanecen en `WRK-TASK-057`.
+
+## Acceptance Criteria
+
+- [ ] `rag_docs.contracts` no importa `qdrant_client`, `sentence_transformers`, `httpx`, `fastapi`
+      ni ningún cliente de I/O, y un test lo verifica.
+- [ ] Existen los objetos de valor `IndexFingerprint`, `Scope`, `ErrorKind`, `CorrelationId` e
+      `IdempotencyKey`, y los DTO de dominio quedan alojados en el paquete.
+- [ ] Existen los puertos `EmbeddingPort`, `GenerationPort`, `RetrievalPort`, `AuthorizationPort`,
+      `GroundingPort` y `DocumentSourcePort`.
+- [ ] `GenerationPort` declara ya la variante de streaming y la contabilidad de tokens y latencia,
+      aunque su implementación llegue en `WRK-TASK-041`.
+- [ ] `RetrievalPort.search` recibe pregunta y ámbito, no vector: la resolución del embedding de
+      consulta queda del lado de retrieval.
+- [ ] `api.py` deja de responder `503` con el texto de la excepción y mapea `ErrorKind` a códigos
+      HTTP sin filtrar detalles internos.
+- [ ] La política de compatibilidad de los DTO queda escrita: campos aditivos, nunca renombrados ni
+      con semántica cambiada en sitio.
+- [ ] Los gold sets existentes producen resultados idénticos antes y después del cambio.
+
+## Evidence
+
+Pendiente.
