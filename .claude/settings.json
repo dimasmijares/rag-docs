@@ -12,6 +12,7 @@
       "Bash(git show:*)",
       "Bash(git branch:*)",
       "Bash(gh pr merge:*)",
+      "Bash(gh pr api:*)",
       "Bash(gh release:*)",
       "Bash(pwsh -NoProfile -Command *scripts/kdd.ps1*)",
       "Bash(pwsh -NoProfile -Command *scripts/check-kdd-lifecycle.ps1*)",
