@@ -1,0 +1,7 @@
+# Copia este fichero como public-safety-identifiers.local.txt (ya ignorado por Git,
+# coincide con el patrón config/**/*.local.* de .gitignore) y añade un identificador
+# corporativo derivado por línea. Líneas vacías y las que empiezan por '#' se ignoran.
+# En CI, la misma lista se carga vía la variable de entorno PUBLIC_SAFETY_IDENTIFIERS
+# (identificadores separados por '|') desde un secreto del repositorio.
+#
+# EJEMPLO_IDENTIFICADOR_DERIVADO
