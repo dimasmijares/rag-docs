@@ -34,6 +34,11 @@ class UnavailableGeneratorQuery:
         raise GenerationError("El generador remoto no responde")
 
 
+class BrokenQuery:
+    def query(self, question: str):
+        raise RuntimeError("qdrant connection string=secret@internal-host:6333")
+
+
 class FakeGeneratorControl:
     def __init__(self) -> None:
         self.active = "local"
@@ -118,6 +123,23 @@ def test_generator_failure_is_an_explicit_service_error(tmp_path: Path) -> None:
 
     assert response.status_code == 503
     assert response.json()["detail"] == "El generador remoto no responde"
+
+
+def test_unexpected_error_maps_to_error_kind_without_leaking_exception_text(
+    tmp_path: Path,
+) -> None:
+    container = SimpleNamespace(
+        source_definitions=[SourceDefinition(id="demo", root=tmp_path)],
+        indexing=FakeIndexing(),
+        query=BrokenQuery(),
+    )
+    client = TestClient(create_app(container))
+
+    response = client.post("/api/query", json={"question": "¿Qué hay?"})
+
+    assert response.status_code == 503
+    assert "secret" not in response.json()["detail"]
+    assert "qdrant" not in response.json()["detail"].casefold()
 
 
 def test_generator_profiles_can_be_checked_and_activated(tmp_path: Path) -> None:

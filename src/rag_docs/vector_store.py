@@ -4,7 +4,7 @@ import uuid
 from collections.abc import Iterable
 from typing import Protocol
 
-from rag_docs.models import (
+from rag_docs.contracts import (
     DocumentChunk,
     IndexedDocument,
     SearchHit,

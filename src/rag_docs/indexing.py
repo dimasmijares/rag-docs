@@ -1,34 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
-
 from rag_docs.chunking import chunk_document
+from rag_docs.contracts import IndexError, IndexReport
 from rag_docs.embeddings import Embedder
 from rag_docs.extractors import extract_document
 from rag_docs.models import DocumentCandidate
 from rag_docs.sources.base import DocumentSource
 from rag_docs.vector_store import VectorStore
 
-
-@dataclass(slots=True)
-class IndexError:
-    source_id: str
-    path: str
-    message: str
-
-
-@dataclass(slots=True)
-class IndexReport:
-    added: int = 0
-    updated: int = 0
-    deleted: int = 0
-    unchanged: int = 0
-    skipped: int = 0
-    chunks_written: int = 0
-    errors: list[IndexError] = field(default_factory=list)
-
-    def model_dump(self) -> dict:
-        return asdict(self)
+__all__ = ["IndexError", "IndexReport", "IndexingService"]
 
 
 class IndexingService:
