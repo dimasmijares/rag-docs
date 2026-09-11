@@ -3,8 +3,10 @@ from __future__ import annotations
 import re
 from typing import Literal
 
+from rag_docs.authorization import SingleTenantAuthorization
 from rag_docs.contracts import (
     AnswerClaim,
+    AuthorizationPort,
     Citation,
     QueryResult,
     RetrievalDiagnostic,
@@ -37,10 +39,13 @@ class QueryService:
     ``AnswerValidator`` — both pure pieces behind the shape of ``GroundingPort``.
     ``QueryService`` itself only sequences embedding, retrieval, context
     building, generation and validation; it does not implement any of that
-    logic directly. Wiring against the Scope-aware ``RetrievalPort`` and a real
-    ``AuthorizationPort`` is deliberately left to ``WRK-TASK-037`` and
-    ``WRK-TASK-082`` respectively, which is why this service still depends on
-    the narrower ``Embedder``/``VectorStore``/``Generator`` adapters used today.
+    logic directly. ``authorizer`` resolves the ``Scope`` every search is
+    prefiltered by (``ADR-RAG-009``, ``WRK-TASK-082``); the ``v0.3.0``
+    implementation is single-tenant, and ``v1.5.0`` can replace it without
+    touching this class. Wiring the Scope-aware ``RetrievalPort`` itself is
+    deliberately left to ``WRK-TASK-037``, which is why this service still
+    depends on the narrower ``Embedder``/``VectorStore``/``Generator``
+    adapters used today.
     """
 
     def __init__(
@@ -52,6 +57,7 @@ class QueryService:
         context_chunks: int = 5,
         min_score: float = 0.45,
         generation_strategy: Literal["llm", "extractive_fallback"] = "llm",
+        authorizer: AuthorizationPort | None = None,
     ) -> None:
         self.embedder = embedder
         self.store = store
@@ -59,6 +65,7 @@ class QueryService:
         self.top_k = top_k
         self.min_score = min_score
         self.generation_strategy = generation_strategy
+        self.authorizer = authorizer or SingleTenantAuthorization()
         self.context_builder = ContextBuilder(context_chunks=context_chunks)
         self.validator = AnswerValidator()
 
@@ -126,7 +133,8 @@ class QueryService:
             raise ValueError("La pregunta no puede estar vacía")
         expected_language = infer_question_language(question)
         vector = self.embedder.embed_query(question)
-        hits = self.store.search(vector, self.top_k, self.min_score)
+        scope = self.authorizer.resolve_scope(None)
+        hits = self.store.search(vector, self.top_k, self.min_score, scope)
         built = self.context_builder.build(question, hits)
 
         if not built.selected:

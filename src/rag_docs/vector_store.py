@@ -5,14 +5,20 @@ from collections.abc import Iterable
 from typing import Protocol
 
 from rag_docs.contracts import (
+    AclFields,
     AppError,
     DocumentChunk,
     ErrorKind,
     IndexedDocument,
     IndexFingerprint,
+    Scope,
     SearchHit,
     chunk_from_payload,
 )
+
+# Payload fields (ADR-RAG-009) a Qdrant keyword index must exist on before any
+# write, so the authorization prefilter never degrades to a full scan.
+ACL_PAYLOAD_INDEXES = ("tenant_id", "acl_subjects", "classification")
 
 
 class VectorStore(Protocol):
@@ -29,8 +35,10 @@ class VectorStore(Protocol):
     def upsert(self, chunks: list[DocumentChunk], vectors: list[list[float]]) -> None: ...
 
     def search(
-        self, vector: list[float], limit: int, score_threshold: float | None
+        self, vector: list[float], limit: int, score_threshold: float | None, scope: Scope
     ) -> list[SearchHit]: ...
+
+    def update_acl(self, document_id: str, acl: AclFields) -> None: ...
 
 
 class QdrantVectorStore:
@@ -133,13 +141,21 @@ class QdrantVectorStore:
         return self._bound_fingerprint
 
     def _create_physical(self, name: str, vector_size: int) -> None:
-        from qdrant_client.models import Distance, VectorParams
+        from qdrant_client.models import Distance, PayloadSchemaType, VectorParams
 
         if not self.client.collection_exists(name):
             self.client.create_collection(
                 collection_name=name,
                 vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
             )
+            # Before any write (ADR-RAG-009): without these, the authorization
+            # prefilter degrades to a full scan instead of an index lookup.
+            for field_name in ACL_PAYLOAD_INDEXES:
+                self.client.create_payload_index(
+                    collection_name=name,
+                    field_name=field_name,
+                    field_schema=PayloadSchemaType.KEYWORD,
+                )
 
     def publish_alias(self, physical_name: str) -> None:
         """Atomically repoint the logical alias at ``physical_name``. Both the
@@ -298,12 +314,25 @@ class QdrantVectorStore:
             )
 
     def search(
-        self, vector: list[float], limit: int, score_threshold: float | None
+        self, vector: list[float], limit: int, score_threshold: float | None, scope: Scope
     ) -> list[SearchHit]:
+        from qdrant_client.models import FieldCondition, Filter, MatchAny, MatchValue
+
         self._check_bound()
         response = self.client.query_points(
             collection_name=self.collection_name,
             query=vector,
+            query_filter=Filter(
+                must=[
+                    FieldCondition(key="tenant_id", match=MatchValue(value=scope.tenant)),
+                    FieldCondition(
+                        key="acl_subjects", match=MatchAny(any=list(scope.subjects))
+                    ),
+                    FieldCondition(
+                        key="classification", match=MatchAny(any=list(scope.classifications))
+                    ),
+                ]
+            ),
             limit=limit,
             score_threshold=score_threshold,
             with_payload=True,
@@ -313,6 +342,30 @@ class QdrantVectorStore:
             SearchHit(chunk=chunk_from_payload(point.payload or {}), score=float(point.score))
             for point in response.points
         ]
+
+    def update_acl(self, document_id: str, acl: AclFields) -> None:
+        """Change a document's ACL by ``document_id`` without recomputing any
+        embedding (``ADR-RAG-009``): a permission revocation must never cost a
+        reindex to be operable."""
+        from qdrant_client.models import FieldCondition, Filter, MatchValue
+
+        self._check_bound()
+        self.client.set_payload(
+            collection_name=self.collection_name,
+            payload={
+                "tenant_id": acl.tenant_id,
+                "acl_subjects": list(acl.acl_subjects),
+                "classification": acl.classification,
+                "acl_policy_id": acl.acl_policy_id,
+                "acl_version": acl.acl_version,
+            },
+            points=Filter(
+                must=[
+                    FieldCondition(key="document_id", match=MatchValue(value=document_id))
+                ]
+            ),
+            wait=True,
+        )
 
 
 def batch(items: list[DocumentChunk], size: int) -> Iterable[list[DocumentChunk]]:

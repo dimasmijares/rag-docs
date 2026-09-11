@@ -1,9 +1,18 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import replace
 
 from rag_docs.chunking import CHUNKER_VERSION, chunk_document
-from rag_docs.contracts import AppError, ErrorKind, IndexError, IndexFingerprint, IndexReport
+from rag_docs.contracts import (
+    SINGLE_TENANT_ACL,
+    AclFields,
+    AppError,
+    ErrorKind,
+    IndexError,
+    IndexFingerprint,
+    IndexReport,
+)
 from rag_docs.embeddings import Embedder
 from rag_docs.extractors import EXTRACTOR_VERSION, extract_document
 from rag_docs.models import DocumentCandidate
@@ -14,9 +23,16 @@ __all__ = [
     "IndexError",
     "IndexReport",
     "IndexingService",
+    "PAYLOAD_SCHEMA_VERSION",
     "build_fingerprint",
+    "default_acl_resolver",
     "migrate_and_publish",
 ]
+
+# Bump when the set or meaning of ACL payload fields changes: it is part of
+# IndexFingerprint (RULE-004), so a schema change always forces a new physical
+# collection instead of silently mixing old and new payload shapes (ADR-RAG-009).
+PAYLOAD_SCHEMA_VERSION = 2
 
 
 def build_fingerprint(
@@ -36,7 +52,19 @@ def build_fingerprint(
         normalize=embedder.normalize,
         query_prefix=embedder.query_prefix,
         passage_prefix=embedder.passage_prefix,
+        payload_schema_version=PAYLOAD_SCHEMA_VERSION,
     )
+
+
+def default_acl_resolver(candidate: DocumentCandidate) -> AclFields | None:
+    """``AuthorizationPort``-shaped ACL resolution for ``v0.3.0``
+    (``ADR-RAG-009``): every document belongs to the single tenant, visible to
+    every subject in it. Real per-document policy resolution — connector
+    identity, group expansion, inheritance — is ``WRK-TASK-043``/``046``; this
+    always returns the single-tenant ACL, but a resolver is still consulted
+    (and still validated) so an invalid result never silently becomes a chunk
+    with an absent tenant or empty subjects."""
+    return SINGLE_TENANT_ACL if SINGLE_TENANT_ACL.is_valid() else None
 
 
 class IndexingService:
@@ -47,12 +75,14 @@ class IndexingService:
         store: VectorStore,
         chunk_tokens: int = 500,
         chunk_overlap: int = 75,
+        acl_resolver: Callable[[DocumentCandidate], AclFields | None] = default_acl_resolver,
     ) -> None:
         self.sources = {source.source_id: source for source in sources}
         self.embedder = embedder
         self.store = store
         self.chunk_tokens = chunk_tokens
         self.chunk_overlap = chunk_overlap
+        self.acl_resolver = acl_resolver
         self._fingerprint: IndexFingerprint | None = None
 
     @property
@@ -88,11 +118,32 @@ class IndexingService:
             if previous and previous.content_hash == candidate.content_hash:
                 report.unchanged += 1
                 continue
+            acl = self.acl_resolver(candidate)
+            if acl is None:
+                report.skipped += 1
+                report.errors.append(
+                    IndexError(
+                        candidate.source_id,
+                        candidate.relative_path,
+                        "ACL no normalizable: el documento no se indexa (ADR-RAG-009).",
+                    )
+                )
+                continue
             try:
                 units = extract_document(candidate)
-                chunks = chunk_document(
-                    candidate, units, self.chunk_tokens, self.chunk_overlap, self.fingerprint
-                )
+                chunks = [
+                    replace(
+                        chunk,
+                        tenant_id=acl.tenant_id,
+                        acl_subjects=acl.acl_subjects,
+                        classification=acl.classification,
+                        acl_policy_id=acl.acl_policy_id,
+                        acl_version=acl.acl_version,
+                    )
+                    for chunk in chunk_document(
+                        candidate, units, self.chunk_tokens, self.chunk_overlap, self.fingerprint
+                    )
+                ]
                 vectors = self.embedder.embed_documents([chunk.text for chunk in chunks])
                 self.store.upsert(chunks, vectors)
                 if previous:

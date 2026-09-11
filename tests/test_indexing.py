@@ -4,7 +4,7 @@ import pytest
 
 from rag_docs.config import SourceDefinition
 from rag_docs.contracts import AppError
-from rag_docs.indexing import IndexingService, migrate_and_publish
+from rag_docs.indexing import PAYLOAD_SCHEMA_VERSION, IndexingService, migrate_and_publish
 from rag_docs.sources.local import LocalFolderSource
 from rag_docs.vector_store import QdrantVectorStore
 from tests.fakes import FakeEmbedder, FakeVectorStore
@@ -29,6 +29,52 @@ def test_indexing_is_incremental_and_deletes_removed_files(tmp_path: Path) -> No
     assert third.updated == 1
     assert fourth.deleted == 1
     assert store.documents == {}
+
+
+def test_a_document_whose_acl_cannot_be_normalized_is_never_indexed(tmp_path: Path) -> None:
+    path = tmp_path / "document.md"
+    path.write_text("contenido corporativo", encoding="utf-8")
+    source = LocalFolderSource(SourceDefinition(id="demo", root=tmp_path))
+    store = FakeVectorStore()
+    service = IndexingService(
+        [source], FakeEmbedder(), store, acl_resolver=lambda candidate: None
+    )
+
+    report = service.index()
+
+    assert report.skipped == 1
+    assert report.added == 0
+    assert report.errors and "ACL" in report.errors[0].message
+    assert store.documents == {}
+
+
+def test_indexed_chunks_carry_the_resolved_acl(tmp_path: Path) -> None:
+    from rag_docs.contracts import AclFields
+
+    path = tmp_path / "document.md"
+    path.write_text("contenido corporativo", encoding="utf-8")
+    source = LocalFolderSource(SourceDefinition(id="demo", root=tmp_path))
+    store = FakeVectorStore()
+    acl = AclFields(tenant_id="acme", acl_subjects=("group:eng",), classification="restricted")
+    service = IndexingService([source], FakeEmbedder(), store, acl_resolver=lambda candidate: acl)
+
+    service.index()
+
+    (document_id,) = store.documents
+    written = store.chunks[document_id]
+    assert written and all(chunk.tenant_id == "acme" for chunk in written)
+    assert all(chunk.acl_subjects == ("group:eng",) for chunk in written)
+    assert all(chunk.classification == "restricted" for chunk in written)
+
+
+def test_introducing_the_acl_payload_schema_forces_a_new_fingerprint() -> None:
+    fingerprint = IndexingService([], FakeEmbedder(), FakeVectorStore()).fingerprint
+    from dataclasses import replace
+
+    pre_acl_equivalent = replace(fingerprint, payload_schema_version=PAYLOAD_SCHEMA_VERSION - 1)
+
+    assert fingerprint.payload_schema_version == PAYLOAD_SCHEMA_VERSION
+    assert fingerprint.digest() != pre_acl_equivalent.digest()
 
 
 def test_discovery_failure_does_not_delete_existing_index(tmp_path: Path) -> None:

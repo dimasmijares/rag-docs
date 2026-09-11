@@ -218,10 +218,10 @@ class TimedStore:
     def upsert(self, chunks, vectors) -> None:
         self.wrapped.upsert(chunks, vectors)
 
-    def search(self, vector: list[float], limit: int, score_threshold: float | None):
+    def search(self, vector: list[float], limit: int, score_threshold: float | None, scope):
         started = perf_counter()
         try:
-            return self.wrapped.search(vector, limit, score_threshold)
+            return self.wrapped.search(vector, limit, score_threshold, scope)
         finally:
             self.recorder.retrieval_ms += (perf_counter() - started) * 1000
 
