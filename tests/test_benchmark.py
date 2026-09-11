@@ -7,11 +7,13 @@ from pathlib import Path
 import pytest
 
 from rag_docs.benchmark import (
+    RebaselineRequired,
     StageRecorder,
     TimedEmbedder,
     TimedGenerator,
     TimedStore,
     _aggregate_profile,
+    compare_reports,
     execute_validation,
     load_benchmark_config,
     select_baseline,
@@ -161,3 +163,63 @@ def test_benchmark_config_contains_only_local_3b_profiles() -> None:
     }
     assert {item["generator_model"] for item in config["profiles"]} == {"qwen2.5:3b"}
     assert all(item["embedding_revision"] for item in config["profiles"])
+
+
+def test_default_corpus_compatibility_manifest_exists() -> None:
+    assert Path("evaluation/corpus-compatibility.yaml").is_file()
+
+
+def _report(*, corpus_version: str, digest: str, score: float) -> dict:
+    return {
+        "corpus_version": corpus_version,
+        "profiles": [
+            {
+                "profile_id": "qwen-3b-balanced",
+                "score": score,
+                "index_fingerprint": {"digest": digest},
+            }
+        ],
+    }
+
+
+def test_compare_reports_computes_delta_for_matching_triplet(tmp_path: Path) -> None:
+    previous = tmp_path / "previous.json"
+    current = tmp_path / "current.json"
+    previous.write_text(
+        json.dumps(_report(corpus_version="0.2.0", digest="abc", score=0.5)),
+        encoding="utf-8",
+    )
+    current.write_text(
+        json.dumps(_report(corpus_version="0.2.0", digest="abc", score=0.8)),
+        encoding="utf-8",
+    )
+
+    result = compare_reports(previous, current, profile_id="qwen-3b-balanced")
+
+    assert result["comparable"] is True
+    assert result["score_delta"] == pytest.approx(0.3)
+
+
+def test_compare_reports_requires_explicit_rebaseline_on_fingerprint_change(
+    tmp_path: Path,
+) -> None:
+    previous = tmp_path / "previous.json"
+    current = tmp_path / "current.json"
+    previous.write_text(
+        json.dumps(_report(corpus_version="0.2.0", digest="abc", score=0.5)),
+        encoding="utf-8",
+    )
+    current.write_text(
+        json.dumps(_report(corpus_version="0.2.0", digest="xyz", score=0.9)),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(RebaselineRequired, match="re-baseline"):
+        compare_reports(previous, current, profile_id="qwen-3b-balanced")
+
+    result = compare_reports(
+        previous, current, profile_id="qwen-3b-balanced", rebaseline=True
+    )
+    assert result["comparable"] is False
+    assert result["score_delta"] is None
+    assert result["rebaseline_declared"] is True

@@ -4,6 +4,8 @@ from rag_docs.evaluation import (
     _percentile,
     aggregate_retrieval_metrics,
     evaluate_case,
+    verify_fingerprint_compatibility,
+    verify_gold_corpus_version,
 )
 
 
@@ -274,3 +276,32 @@ def test_percentile_uses_linear_interpolation() -> None:
 
     assert _percentile(values, 0.50) == 25.0
     assert _percentile(values, 0.95) == 38.5
+
+
+def test_verify_gold_corpus_version_rejects_undeclared_version() -> None:
+    with pytest.raises(ValueError, match="no declara corpus_version"):
+        verify_gold_corpus_version({}, {"corpus_version": "0.2.0"})
+
+
+def test_verify_gold_corpus_version_rejects_mismatch() -> None:
+    with pytest.raises(ValueError, match="No son comparables"):
+        verify_gold_corpus_version(
+            {"corpus_version": "0.1.0"}, {"corpus_version": "0.2.0"}
+        )
+
+
+def test_verify_gold_corpus_version_accepts_declared_match() -> None:
+    verify_gold_corpus_version({"corpus_version": "0.2.0"}, {"corpus_version": "0.2.0"})
+
+
+def test_verify_fingerprint_compatibility_rejects_undeclared_digest() -> None:
+    with pytest.raises(RuntimeError, match="no está declarado compatible"):
+        verify_fingerprint_compatibility(
+            {"corpus_version": "0.2.0", "compatible_fingerprint_digests": ["aaa"]}, "bbb"
+        )
+
+
+def test_verify_fingerprint_compatibility_accepts_declared_digest() -> None:
+    verify_fingerprint_compatibility(
+        {"compatible_fingerprint_digests": ["aaa", "bbb"]}, "bbb"
+    )
