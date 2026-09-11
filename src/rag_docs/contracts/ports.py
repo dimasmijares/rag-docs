@@ -10,7 +10,7 @@ from rag_docs.contracts.dtos import (
     IndexedDocument,
     SearchHit,
 )
-from rag_docs.contracts.value_objects import IndexFingerprint, Scope
+from rag_docs.contracts.value_objects import AclFields, IndexFingerprint, Scope
 
 # Ports are Python Protocols over pure DTOs, with no I/O dependency. Each one is
 # the seam a v2.5.0 service adapter implements; freezing the shape now is what
@@ -153,4 +153,7 @@ class VectorStorePort(Protocol):
         vector: list[float],
         limit: int,
         score_threshold: float | None,
+        scope: Scope,
     ) -> list[SearchHit]: ...
+
+    def update_acl(self, document_id: str, acl: AclFields) -> None: ...

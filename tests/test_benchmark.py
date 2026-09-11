@@ -18,6 +18,7 @@ from rag_docs.benchmark import (
     load_benchmark_config,
     select_baseline,
 )
+from rag_docs.contracts import SINGLE_TENANT_SCOPE
 from tests.fakes import FakeEmbedder, FakeGenerator, FakeVectorStore
 
 
@@ -32,7 +33,7 @@ def test_timed_adapters_keep_stages_separate() -> None:
     generator = TimedGenerator(FakeGenerator("respuesta [1]"), recorder)
 
     assert embedder.embed_query("pregunta")
-    assert store.search([1.0, 0.0, 0.0], 8, None) == []
+    assert store.search([1.0, 0.0, 0.0], 8, None, SINGLE_TENANT_SCOPE) == []
     generator.generate("pregunta", "contexto")
 
     assert recorder.embedding_ms >= 0

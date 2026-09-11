@@ -1,9 +1,17 @@
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
 from rag_docs.chunking import chunk_document
-from rag_docs.contracts import AppError, ErrorKind, IndexFingerprint
+from rag_docs.contracts import (
+    SINGLE_TENANT_SCOPE,
+    AclFields,
+    AppError,
+    ErrorKind,
+    IndexFingerprint,
+    Scope,
+)
 from rag_docs.models import DocumentCandidate, ExtractedUnit
 from rag_docs.vector_store import QdrantVectorStore
 
@@ -20,6 +28,7 @@ def _fingerprint(**overrides: object) -> IndexFingerprint:
         normalize=True,
         query_prefix="query: ",
         passage_prefix="passage: ",
+        payload_schema_version=2,
     )
     defaults.update(overrides)
     return IndexFingerprint(**defaults)  # type: ignore[arg-type]
@@ -39,7 +48,7 @@ def test_qdrant_adapter_with_in_memory_client(tmp_path: Path) -> None:
     store.upsert([chunk], [[1.0, 0.0, 0.0]])
 
     documents = store.list_documents({"demo"})
-    hits = store.search([1.0, 0.0, 0.0], limit=8, score_threshold=0.1)
+    hits = store.search([1.0, 0.0, 0.0], limit=8, score_threshold=0.1, scope=SINGLE_TENANT_SCOPE)
     store.delete_document(candidate.document_id)
 
     assert candidate.document_id in documents
@@ -81,7 +90,7 @@ def test_search_fails_explicitly_when_the_bound_fingerprint_no_longer_matches() 
     store.publish_alias(store._physical_name(other))
 
     with pytest.raises(AppError) as excinfo:
-        store.search([1.0, 0.0, 0.0], limit=8, score_threshold=None)
+        store.search([1.0, 0.0, 0.0], limit=8, score_threshold=None, scope=SINGLE_TENANT_SCOPE)
 
     assert excinfo.value.kind is ErrorKind.VALIDATION
 
@@ -90,7 +99,7 @@ def test_search_without_any_bound_fingerprint_is_rejected() -> None:
     store = QdrantVectorStore(":memory:", "logical")
 
     with pytest.raises(AppError):
-        store.search([1.0, 0.0, 0.0], limit=8, score_threshold=None)
+        store.search([1.0, 0.0, 0.0], limit=8, score_threshold=None, scope=SINGLE_TENANT_SCOPE)
 
 
 def test_publish_and_rollback_alias_keep_the_previous_collection_available() -> None:
@@ -150,5 +159,95 @@ def test_prune_document_removes_only_stale_points(tmp_path: Path) -> None:
 
     remaining = store.list_documents({"demo"})
     assert remaining[candidate_v2.document_id].content_hash == "hash-v2"
-    hits = store.search([1.0, 0.0, 0.0], limit=50, score_threshold=None)
+    hits = store.search([1.0, 0.0, 0.0], limit=50, score_threshold=None, scope=SINGLE_TENANT_SCOPE)
     assert {hit.chunk.chunk_id for hit in hits} == {chunk.chunk_id for chunk in new_chunks}
+
+
+def test_ensure_collection_creates_acl_payload_indexes_before_any_write() -> None:
+    # The local/in-memory Qdrant client accepts create_payload_index calls but
+    # never materializes them in get_collection().payload_schema (it warns
+    # "Payload indexes have no effect in the local Qdrant"), so this asserts
+    # the call happens rather than inspecting schema state afterwards.
+    store = QdrantVectorStore(":memory:", "logical")
+    fingerprint = _fingerprint()
+    indexed_fields: list[str] = []
+    original = store.client.create_payload_index
+
+    def spy(*, collection_name, field_name, field_schema):
+        indexed_fields.append(field_name)
+        return original(
+            collection_name=collection_name, field_name=field_name, field_schema=field_schema
+        )
+
+    store.client.create_payload_index = spy
+
+    store.ensure_collection(3, fingerprint)
+
+    assert {"tenant_id", "acl_subjects", "classification"}.issubset(set(indexed_fields))
+
+
+def test_search_prefilters_by_scope_and_denies_a_foreign_tenant(tmp_path: Path) -> None:
+    path = tmp_path / "doc.txt"
+    path.write_text("contenido", encoding="utf-8")
+    candidate = DocumentCandidate("demo", path, "doc.txt", path.as_uri(), "hash")
+    fingerprint = _fingerprint()
+    chunk = chunk_document(candidate, [ExtractedUnit("contenido")], fingerprint=fingerprint)[0]
+    store = QdrantVectorStore(":memory:", "test")
+    store.ensure_collection(3, fingerprint)
+    store.upsert([chunk], [[1.0, 0.0, 0.0]])
+
+    same_tenant = store.search(
+        [1.0, 0.0, 0.0], limit=8, score_threshold=None, scope=SINGLE_TENANT_SCOPE
+    )
+    other_tenant = store.search(
+        [1.0, 0.0, 0.0],
+        limit=8,
+        score_threshold=None,
+        scope=Scope(tenant="other-tenant"),
+    )
+
+    assert len(same_tenant) == 1
+    assert other_tenant == []
+
+
+def test_update_acl_changes_payload_without_touching_the_vector(tmp_path: Path) -> None:
+    path = tmp_path / "doc.txt"
+    path.write_text("contenido", encoding="utf-8")
+    candidate = DocumentCandidate("demo", path, "doc.txt", path.as_uri(), "hash")
+    fingerprint = _fingerprint()
+    chunk = chunk_document(candidate, [ExtractedUnit("contenido")], fingerprint=fingerprint)[0]
+    store = QdrantVectorStore(":memory:", "test")
+    store.ensure_collection(3, fingerprint)
+    store.upsert([chunk], [[1.0, 0.0, 0.0]])
+    revoked = AclFields(
+        tenant_id="other-tenant", acl_subjects=("other-tenant",), classification="internal"
+    )
+
+    store.update_acl(candidate.document_id, revoked)
+
+    assert store.search(
+        [1.0, 0.0, 0.0], limit=8, score_threshold=None, scope=SINGLE_TENANT_SCOPE
+    ) == []
+    other_tenant_scope = Scope(
+        tenant="other-tenant",
+        subjects=frozenset({"other-tenant"}),
+        classifications=frozenset({"internal"}),
+    )
+    hits = store.search(
+        [1.0, 0.0, 0.0], limit=8, score_threshold=None, scope=other_tenant_scope
+    )
+    assert len(hits) == 1
+    assert hits[0].chunk.tenant_id == "other-tenant"
+
+
+def test_chunk_default_acl_is_never_absent() -> None:
+    chunk = chunk_document(
+        DocumentCandidate("demo", Path("doc.txt"), "doc.txt", "file:///doc.txt", "hash"),
+        [ExtractedUnit("contenido")],
+    )[0]
+
+    assert chunk.tenant_id
+    assert chunk.acl_subjects
+
+    with pytest.raises(ValueError, match="ACL"):
+        replace(chunk, tenant_id="", acl_subjects=())

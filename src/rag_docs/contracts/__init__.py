@@ -40,8 +40,11 @@ from rag_docs.contracts.ports import (
     VectorStorePort,
 )
 from rag_docs.contracts.value_objects import (
+    DEFAULT_CLASSIFICATION,
     SINGLE_TENANT,
+    SINGLE_TENANT_ACL,
     SINGLE_TENANT_SCOPE,
+    AclFields,
     CorrelationId,
     ErrorKind,
     IdempotencyKey,
@@ -50,11 +53,13 @@ from rag_docs.contracts.value_objects import (
 )
 
 __all__ = [
+    "AclFields",
     "AnswerClaim",
     "AppError",
     "AuthorizationPort",
     "Citation",
     "CorrelationId",
+    "DEFAULT_CLASSIFICATION",
     "DocumentCandidate",
     "DocumentChunk",
     "DocumentSourcePort",
@@ -77,6 +82,7 @@ __all__ = [
     "RetrievalPort",
     "Scope",
     "SINGLE_TENANT",
+    "SINGLE_TENANT_ACL",
     "SINGLE_TENANT_SCOPE",
     "SearchHit",
     "VectorStorePort",

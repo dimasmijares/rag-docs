@@ -79,6 +79,7 @@ def test_value_objects_are_frozen() -> None:
         normalize=True,
         query_prefix="query: ",
         passage_prefix="passage: ",
+        payload_schema_version=2,
     )
     with pytest.raises(AttributeError):
         fingerprint.dimension = 128  # type: ignore[misc]

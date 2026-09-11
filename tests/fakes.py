@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from dataclasses import replace
 
 from rag_docs.contracts import IndexFingerprint
 from rag_docs.generation import (
@@ -74,13 +75,26 @@ class FakeVectorStore:
         )
 
     def search(
-        self, vector: list[float], limit: int, score_threshold: float | None
+        self, vector: list[float], limit: int, score_threshold: float | None, scope=None
     ) -> list[SearchHit]:
         return [
             hit
             for hit in self.hits
             if score_threshold is None or hit.score >= score_threshold
         ][:limit]
+
+    def update_acl(self, document_id: str, acl) -> None:
+        self.chunks[document_id] = [
+            replace(
+                chunk,
+                tenant_id=acl.tenant_id,
+                acl_subjects=acl.acl_subjects,
+                classification=acl.classification,
+                acl_policy_id=acl.acl_policy_id,
+                acl_version=acl.acl_version,
+            )
+            for chunk in self.chunks.get(document_id, [])
+        ]
 
 
 class FakeGenerator:

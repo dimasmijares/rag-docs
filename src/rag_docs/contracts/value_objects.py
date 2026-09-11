@@ -31,6 +31,7 @@ class IndexFingerprint:
     normalize: bool
     query_prefix: str
     passage_prefix: str
+    payload_schema_version: int
 
     def digest(self) -> str:
         parts = (
@@ -44,6 +45,7 @@ class IndexFingerprint:
             "1" if self.normalize else "0",
             self.query_prefix,
             self.passage_prefix,
+            str(self.payload_schema_version),
         )
         return hashlib.sha256("\x1f".join(parts).encode("utf-8")).hexdigest()[:16]
 
@@ -63,7 +65,40 @@ class Scope:
 
 
 SINGLE_TENANT = "default"
-SINGLE_TENANT_SCOPE = Scope(tenant=SINGLE_TENANT)
+DEFAULT_CLASSIFICATION = "internal"
+SINGLE_TENANT_SCOPE = Scope(
+    tenant=SINGLE_TENANT,
+    subjects=frozenset({SINGLE_TENANT}),
+    classifications=frozenset({DEFAULT_CLASSIFICATION}),
+)
+
+
+@dataclass(frozen=True, slots=True)
+class AclFields:
+    """Normalized ACL a chunk's payload carries (``ADR-RAG-009``).
+
+    ``acl_policy_id``/``acl_version`` are for audit and reconciliation only,
+    never for deciding anything on the query path — the prefilter only ever
+    reads ``tenant_id``, ``acl_subjects`` and ``classification``.
+    """
+
+    tenant_id: str
+    acl_subjects: tuple[str, ...]
+    classification: str
+    acl_policy_id: str | None = None
+    acl_version: int = 1
+
+    def is_valid(self) -> bool:
+        """A chunk is never written with an absent tenant or empty subjects
+        (``ADR-RAG-009``): this is what a resolver checks before indexing."""
+        return bool(self.tenant_id) and bool(self.acl_subjects)
+
+
+SINGLE_TENANT_ACL = AclFields(
+    tenant_id=SINGLE_TENANT,
+    acl_subjects=(SINGLE_TENANT,),
+    classification=DEFAULT_CLASSIFICATION,
+)
 
 
 class ErrorKind(StrEnum):

@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from rag_docs.chunking import chunk_document
+from rag_docs.contracts import SINGLE_TENANT_SCOPE, Scope
 from rag_docs.generation import GeneratedClaim, GeneratedResponse
 from rag_docs.models import DocumentCandidate, ExtractedUnit, SearchHit
 from rag_docs.query import QueryService
@@ -37,6 +38,50 @@ def test_query_returns_grounded_answer_with_citations(tmp_path: Path) -> None:
     assert result.citations[0].relative_path == "etl/doc.md"
     assert "[1]" in result.answer
     assert "ETL_CLIENTES_DIARIA" in generator.context
+
+
+def test_query_prefilters_search_by_the_authorizers_scope(tmp_path: Path) -> None:
+    store = FakeVectorStore()
+    store.hits = [make_hit(tmp_path)]
+    generator = FakeGenerator("La carga corresponde a ETL_CLIENTES_DIARIA [1].")
+    seen_scopes: list[Scope] = []
+    original_search = store.search
+
+    def spying_search(vector, limit, score_threshold, scope=None):
+        seen_scopes.append(scope)
+        return original_search(vector, limit, score_threshold, scope)
+
+    store.search = spying_search
+    service = QueryService(FakeEmbedder(), store, generator)
+
+    service.query("¿Qué carga clientes?")
+
+    assert seen_scopes == [SINGLE_TENANT_SCOPE]
+
+
+def test_query_uses_a_custom_authorizers_resolved_scope(tmp_path: Path) -> None:
+    store = FakeVectorStore()
+    store.hits = [make_hit(tmp_path)]
+    generator = FakeGenerator("La carga corresponde a ETL_CLIENTES_DIARIA [1].")
+    acme_scope = Scope(tenant="acme")
+    seen_scopes: list[Scope] = []
+    original_search = store.search
+
+    def spying_search(vector, limit, score_threshold, scope=None):
+        seen_scopes.append(scope)
+        return original_search(vector, limit, score_threshold, scope)
+
+    store.search = spying_search
+
+    class AcmeAuthorization:
+        def resolve_scope(self, principal: str | None = None) -> Scope:
+            return acme_scope
+
+    service = QueryService(FakeEmbedder(), store, generator, authorizer=AcmeAuthorization())
+
+    service.query("¿Qué carga clientes?")
+
+    assert seen_scopes == [acme_scope]
 
 
 def test_query_without_hits_does_not_call_generator() -> None:

@@ -4,6 +4,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Literal
 
+from rag_docs.contracts.value_objects import DEFAULT_CLASSIFICATION, SINGLE_TENANT
 from rag_docs.language import SupportedLanguage
 
 # Domain DTOs that cross an internal port. Compatibility policy (see
@@ -52,6 +53,18 @@ class DocumentChunk:
     locator: Locator
     section: str | None
     chunk_index: int
+    tenant_id: str = SINGLE_TENANT
+    acl_subjects: tuple[str, ...] = (SINGLE_TENANT,)
+    classification: str = DEFAULT_CLASSIFICATION
+    acl_policy_id: str | None = None
+    acl_version: int = 1
+
+    def __post_init__(self) -> None:
+        if not self.tenant_id or not self.acl_subjects:
+            raise ValueError(
+                "DocumentChunk requiere tenant_id y acl_subjects no vacíos (ADR-RAG-009): "
+                "un documento cuya ACL no se puede normalizar no se indexa."
+            )
 
     def payload(self) -> dict[str, Any]:
         return {
@@ -66,6 +79,11 @@ class DocumentChunk:
             "locator": self.locator,
             "section": self.section,
             "chunk_index": self.chunk_index,
+            "tenant_id": self.tenant_id,
+            "acl_subjects": list(self.acl_subjects),
+            "classification": self.classification,
+            "acl_policy_id": self.acl_policy_id,
+            "acl_version": self.acl_version,
         }
 
 
@@ -95,6 +113,11 @@ def chunk_from_payload(payload: dict[str, Any]) -> DocumentChunk:
         locator=dict(payload.get("locator") or {}),
         section=payload.get("section"),
         chunk_index=int(payload.get("chunk_index", 0)),
+        tenant_id=str(payload.get("tenant_id", SINGLE_TENANT)),
+        acl_subjects=tuple(payload.get("acl_subjects") or (SINGLE_TENANT,)),
+        classification=str(payload.get("classification", DEFAULT_CLASSIFICATION)),
+        acl_policy_id=payload.get("acl_policy_id"),
+        acl_version=int(payload.get("acl_version", 1)),
     )
 
 
