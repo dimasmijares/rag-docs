@@ -1,0 +1,906 @@
+{
+  "schema_version": "1.0",
+  "benchmark_id": "wrk-task-037-hybrid-comparison",
+  "phase": "validation",
+  "started_at": "2026-09-11T23:12:35.870495+00:00",
+  "completed_at": "2026-09-11T23:12:52.614114+00:00",
+  "revision": "a4c12c8734125a506d2c0e9cc70e2af2969d54f3",
+  "config_path": "config/benchmark-037-hybrid.yaml",
+  "config_sha256": "3817ada92724bc9283836b9c99aeb30ef678946970ed0b6d7bcba45a3ae4d2a1",
+  "gold_set": "evaluation/gold-set.validation.yaml",
+  "gold_sha256": "d7805afb9eaadc5de24a335a9c276ee30748451f58a5d830fca63789e760848a",
+  "source_sha256": "7c1b4087989da1742fc6cd770abe382a41278ca8abc7f327bfcd13b22629d3a0",
+  "corpus_manifest_sha256": "329929f1ba0d303f3aad2e8f6cec4cca101540988c95f7919e3d28d50ef5e574",
+  "corpus_version": "0.2.0",
+  "corpus_compatibility_sha256": "ac86821a13d35124556e995fbac755b13d23b393898746cde4c982cb5c66ad76",
+  "seed": 0,
+  "shared_config": {
+    "embedding_batch_size": 16,
+    "chunk_tokens": 500,
+    "chunk_overlap": 75,
+    "ollama_timeout": 180,
+    "ollama_temperature": 0.0
+  },
+  "run_definition": {
+    "cold": "primer caso tras desalojar Ollama y recrear el embedder",
+    "warm": "casos restantes del mismo perfil y proceso",
+    "grounding": "selección, construcción y validación fuera de embed/retrieval/generate",
+    "memory": "pico RSS Python, uso host y residencia Ollama durante cada consulta"
+  },
+  "hardware": {
+    "os_family": "Windows",
+    "architecture": "AMD64",
+    "logical_cpu_count": 16,
+    "physical_cpu_count": 8,
+    "memory_gib_bucket": 12,
+    "embedding_device": "cpu"
+  },
+  "models": [],
+  "decision_sha256": null,
+  "profiles": [
+    {
+      "profile_id": "dense-baseline",
+      "baseline_eligible": true,
+      "retrieval_strategy": "dense",
+      "retrieval_strategy_version": "dense",
+      "effective_config": {
+        "generator_mode": "forced_fallback",
+        "generator_model": "qwen2.5:3b",
+        "generator_digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+        "embedding_model": "intfloat/multilingual-e5-small",
+        "embedding_revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+        "retrieval_top_k": 8,
+        "context_chunks": 5,
+        "min_score": 0.45
+      },
+      "passed": 2,
+      "total": 8,
+      "score": 0.25,
+      "retrieval": {
+        "cases": 8,
+        "eligible_cases": 6,
+        "recall_at_1": 0.75,
+        "recall_at_3": 0.916667,
+        "recall_at_5": 0.916667,
+        "recall_at_8": 1.0,
+        "reciprocal_rank": 0.916667,
+        "precision_at_1": 0.833333,
+        "precision_at_3": 0.388889,
+        "precision_at_5": 0.233333,
+        "precision_at_8": 0.166667
+      },
+      "performance": {
+        "embedding": {
+          "p50_ms": 15.76,
+          "p95_ms": 2588.25,
+          "min_ms": 14.51,
+          "max_ms": 3972.7
+        },
+        "retrieval": {
+          "p50_ms": 1.71,
+          "p95_ms": 1.98,
+          "min_ms": 1.47,
+          "max_ms": 1.99
+        },
+        "grounding": {
+          "p50_ms": 1.13,
+          "p95_ms": 1.36,
+          "min_ms": 0.98,
+          "max_ms": 1.43
+        },
+        "generation": {
+          "p50_ms": 0.0,
+          "p95_ms": 0.0,
+          "min_ms": 0.0,
+          "max_ms": 0.0
+        },
+        "total": {
+          "p50_ms": 18.51,
+          "p95_ms": 2591.23,
+          "min_ms": 17.62,
+          "max_ms": 3975.64
+        }
+      },
+      "performance_by_state": {
+        "cold": {
+          "embedding": {
+            "p50_ms": 3972.7,
+            "p95_ms": 3972.7,
+            "min_ms": 3972.7,
+            "max_ms": 3972.7
+          },
+          "retrieval": {
+            "p50_ms": 1.51,
+            "p95_ms": 1.51,
+            "min_ms": 1.51,
+            "max_ms": 1.51
+          },
+          "grounding": {
+            "p50_ms": 1.43,
+            "p95_ms": 1.43,
+            "min_ms": 1.43,
+            "max_ms": 1.43
+          },
+          "generation": {
+            "p50_ms": 0.0,
+            "p95_ms": 0.0,
+            "min_ms": 0.0,
+            "max_ms": 0.0
+          },
+          "total": {
+            "p50_ms": 3975.64,
+            "p95_ms": 3975.64,
+            "min_ms": 3975.64,
+            "max_ms": 3975.64
+          }
+        },
+        "warm": {
+          "embedding": {
+            "p50_ms": 15.45,
+            "p95_ms": 16.99,
+            "min_ms": 14.51,
+            "max_ms": 17.14
+          },
+          "retrieval": {
+            "p50_ms": 1.84,
+            "p95_ms": 1.98,
+            "min_ms": 1.47,
+            "max_ms": 1.99
+          },
+          "grounding": {
+            "p50_ms": 1.07,
+            "p95_ms": 1.23,
+            "min_ms": 0.98,
+            "max_ms": 1.24
+          },
+          "generation": {
+            "p50_ms": 0.0,
+            "p95_ms": 0.0,
+            "min_ms": 0.0,
+            "max_ms": 0.0
+          },
+          "total": {
+            "p50_ms": 18.48,
+            "p95_ms": 19.86,
+            "min_ms": 17.62,
+            "max_ms": 20.17
+          }
+        }
+      },
+      "errors": {},
+      "cases": [
+        {
+          "id": "val-atlas-restore-equivalent",
+          "run_state": "cold",
+          "passed": false,
+          "status_ok": false,
+          "retrieval_ok": true,
+          "facts_ok": false,
+          "language_ok": true,
+          "citations_ok": false,
+          "generation_mode": "none",
+          "failure_stage": "generation",
+          "retrieval_metrics": {
+            "eligible": true,
+            "recall_at_1": 1.0,
+            "precision_at_1": 1.0,
+            "recall_at_3": 1.0,
+            "precision_at_3": 0.6666666666666666,
+            "recall_at_5": 1.0,
+            "precision_at_5": 0.4,
+            "recall_at_8": 1.0,
+            "precision_at_8": 0.25,
+            "reciprocal_rank": 1.0
+          },
+          "stages": {
+            "embedding_ms": 3972.7,
+            "retrieval_ms": 1.51,
+            "grounding_ms": 1.43,
+            "generation_ms": 0.0,
+            "generation_calls": 0,
+            "total_ms": 3975.64,
+            "process_peak_rss_mb": 1219.1,
+            "host_peak_used_mb": 9248.87
+          },
+          "error": null
+        },
+        {
+          "id": "val-atlas-route-target",
+          "run_state": "warm",
+          "passed": false,
+          "status_ok": false,
+          "retrieval_ok": true,
+          "facts_ok": false,
+          "language_ok": true,
+          "citations_ok": false,
+          "generation_mode": "none",
+          "failure_stage": "generation",
+          "retrieval_metrics": {
+            "eligible": true,
+            "recall_at_1": 0.0,
+            "precision_at_1": 0.0,
+            "recall_at_3": 1.0,
+            "precision_at_3": 0.3333333333333333,
+            "recall_at_5": 1.0,
+            "precision_at_5": 0.2,
+            "recall_at_8": 1.0,
+            "precision_at_8": 0.125,
+            "reciprocal_rank": 0.5
+          },
+          "stages": {
+            "embedding_ms": 14.51,
+            "retrieval_ms": 1.91,
+            "grounding_ms": 1.2,
+            "generation_ms": 0.0,
+            "generation_calls": 0,
+            "total_ms": 17.62,
+            "process_peak_rss_mb": 957.43,
+            "host_peak_used_mb": 8987.63
+          },
+          "error": null
+        },
+        {
+          "id": "val-atlas-gateway-slo",
+          "run_state": "warm",
+          "passed": false,
+          "status_ok": false,
+          "retrieval_ok": true,
+          "facts_ok": false,
+          "language_ok": true,
+          "citations_ok": false,
+          "generation_mode": "none",
+          "failure_stage": "generation",
+          "retrieval_metrics": {
+            "eligible": true,
+            "recall_at_1": 1.0,
+            "precision_at_1": 1.0,
+            "recall_at_3": 1.0,
+            "precision_at_3": 0.3333333333333333,
+            "recall_at_5": 1.0,
+            "precision_at_5": 0.2,
+            "recall_at_8": 1.0,
+            "precision_at_8": 0.125,
+            "reciprocal_rank": 1.0
+          },
+          "stages": {
+            "embedding_ms": 15.35,
+            "retrieval_ms": 1.57,
+            "grounding_ms": 1.04,
+            "generation_ms": 0.0,
+            "generation_calls": 0,
+            "total_ms": 17.96,
+            "process_peak_rss_mb": 957.52,
+            "host_peak_used_mb": 8987.63
+          },
+          "error": null
+        },
+        {
+          "id": "val-atlas-oncall-first-check",
+          "run_state": "warm",
+          "passed": false,
+          "status_ok": false,
+          "retrieval_ok": true,
+          "facts_ok": false,
+          "language_ok": true,
+          "citations_ok": false,
+          "generation_mode": "none",
+          "failure_stage": "generation",
+          "retrieval_metrics": {
+            "eligible": true,
+            "recall_at_1": 1.0,
+            "precision_at_1": 1.0,
+            "recall_at_3": 1.0,
+            "precision_at_3": 0.3333333333333333,
+            "recall_at_5": 1.0,
+            "precision_at_5": 0.2,
+            "recall_at_8": 1.0,
+            "precision_at_8": 0.125,
+            "reciprocal_rank": 1.0
+          },
+          "stages": {
+            "embedding_ms": 17.14,
+            "retrieval_ms": 1.84,
+            "grounding_ms": 1.19,
+            "generation_ms": 0.0,
+            "generation_calls": 0,
+            "total_ms": 20.17,
+            "process_peak_rss_mb": 957.72,
+            "host_peak_used_mb": 8988.23
+          },
+          "error": null
+        },
+        {
+          "id": "val-atlas-rollback-sequence",
+          "run_state": "warm",
+          "passed": false,
+          "status_ok": false,
+          "retrieval_ok": true,
+          "facts_ok": false,
+          "language_ok": true,
+          "citations_ok": false,
+          "generation_mode": "none",
+          "failure_stage": "generation",
+          "retrieval_metrics": {
+            "eligible": true,
+            "recall_at_1": 0.5,
+            "precision_at_1": 1.0,
+            "recall_at_3": 0.5,
+            "precision_at_3": 0.3333333333333333,
+            "recall_at_5": 0.5,
+            "precision_at_5": 0.2,
+            "recall_at_8": 1.0,
+            "precision_at_8": 0.25,
+            "reciprocal_rank": 1.0
+          },
+          "stages": {
+            "embedding_ms": 14.85,
+            "retrieval_ms": 1.99,
+            "grounding_ms": 1.24,
+            "generation_ms": 0.0,
+            "generation_calls": 0,
+            "total_ms": 18.08,
+            "process_peak_rss_mb": 957.8,
+            "host_peak_used_mb": 8988.25
+          },
+          "error": null
+        },
+        {
+          "id": "val-atlas-service-operation",
+          "run_state": "warm",
+          "passed": false,
+          "status_ok": false,
+          "retrieval_ok": true,
+          "facts_ok": false,
+          "language_ok": true,
+          "citations_ok": false,
+          "generation_mode": "none",
+          "failure_stage": "generation",
+          "retrieval_metrics": {
+            "eligible": true,
+            "recall_at_1": 1.0,
+            "precision_at_1": 1.0,
+            "recall_at_3": 1.0,
+            "precision_at_3": 0.3333333333333333,
+            "recall_at_5": 1.0,
+            "precision_at_5": 0.2,
+            "recall_at_8": 1.0,
+            "precision_at_8": 0.125,
+            "reciprocal_rank": 1.0
+          },
+          "stages": {
+            "embedding_ms": 16.64,
+            "retrieval_ms": 1.47,
+            "grounding_ms": 1.02,
+            "generation_ms": 0.0,
+            "generation_calls": 0,
+            "total_ms": 19.13,
+            "process_peak_rss_mb": 957.86,
+            "host_peak_used_mb": 8988.84
+          },
+          "error": null
+        },
+        {
+          "id": "val-negative-benefits",
+          "run_state": "warm",
+          "passed": true,
+          "status_ok": true,
+          "retrieval_ok": true,
+          "facts_ok": true,
+          "language_ok": true,
+          "citations_ok": true,
+          "generation_mode": "none",
+          "failure_stage": null,
+          "retrieval_metrics": {
+            "eligible": false,
+            "recall_at_1": null,
+            "recall_at_3": null,
+            "recall_at_5": null,
+            "recall_at_8": null,
+            "reciprocal_rank": null,
+            "precision_at_1": null,
+            "precision_at_3": null,
+            "precision_at_5": null,
+            "precision_at_8": null
+          },
+          "stages": {
+            "embedding_ms": 15.45,
+            "retrieval_ms": 1.96,
+            "grounding_ms": 1.07,
+            "generation_ms": 0.0,
+            "generation_calls": 0,
+            "total_ms": 18.48,
+            "process_peak_rss_mb": 958.06,
+            "host_peak_used_mb": 8989.29
+          },
+          "error": null
+        },
+        {
+          "id": "val-negative-office",
+          "run_state": "warm",
+          "passed": true,
+          "status_ok": true,
+          "retrieval_ok": true,
+          "facts_ok": true,
+          "language_ok": true,
+          "citations_ok": true,
+          "generation_mode": "none",
+          "failure_stage": null,
+          "retrieval_metrics": {
+            "eligible": false,
+            "recall_at_1": null,
+            "recall_at_3": null,
+            "recall_at_5": null,
+            "recall_at_8": null,
+            "reciprocal_rank": null,
+            "precision_at_1": null,
+            "precision_at_3": null,
+            "precision_at_5": null,
+            "precision_at_8": null
+          },
+          "stages": {
+            "embedding_ms": 16.07,
+            "retrieval_ms": 1.48,
+            "grounding_ms": 0.98,
+            "generation_ms": 0.0,
+            "generation_calls": 0,
+            "total_ms": 18.53,
+            "process_peak_rss_mb": 958.12,
+            "host_peak_used_mb": 8990.55
+          },
+          "error": null
+        }
+      ],
+      "indexing_ms": 4159.75,
+      "index_fingerprint": {
+        "extractor": "extractors-v1",
+        "chunker": "whitespace-window-v1",
+        "chunk_tokens": 500,
+        "chunk_overlap": 75,
+        "embedding_model": "intfloat/multilingual-e5-small",
+        "embedding_revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+        "dimension": 384,
+        "normalize": true,
+        "query_prefix": "query: ",
+        "passage_prefix": "passage: ",
+        "payload_schema_version": 2,
+        "digest": "724f6786a9170f8b"
+      },
+      "model_memory": {
+        "resident_mb": 0.0,
+        "vram_mb": 0.0
+      }
+    },
+    {
+      "profile_id": "hybrid-rrf",
+      "baseline_eligible": false,
+      "retrieval_strategy": "hybrid",
+      "retrieval_strategy_version": "bm25-v1+rrf-v1",
+      "effective_config": {
+        "generator_mode": "forced_fallback",
+        "generator_model": "qwen2.5:3b",
+        "generator_digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+        "embedding_model": "intfloat/multilingual-e5-small",
+        "embedding_revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+        "retrieval_top_k": 8,
+        "context_chunks": 5,
+        "min_score": 0.45
+      },
+      "passed": 2,
+      "total": 8,
+      "score": 0.25,
+      "retrieval": {
+        "cases": 8,
+        "eligible_cases": 6,
+        "recall_at_1": 0.75,
+        "recall_at_3": 0.916667,
+        "recall_at_5": 0.916667,
+        "recall_at_8": 0.916667,
+        "reciprocal_rank": 0.916667,
+        "precision_at_1": 0.833333,
+        "precision_at_3": 0.388889,
+        "precision_at_5": 0.233333,
+        "precision_at_8": 0.145833
+      },
+      "performance": {
+        "embedding": {
+          "p50_ms": 14.18,
+          "p95_ms": 2552.12,
+          "min_ms": 13.7,
+          "max_ms": 3917.32
+        },
+        "retrieval": {
+          "p50_ms": 2.54,
+          "p95_ms": 3.1,
+          "min_ms": 2.53,
+          "max_ms": 3.18
+        },
+        "grounding": {
+          "p50_ms": 1.56,
+          "p95_ms": 1.89,
+          "min_ms": 1.48,
+          "max_ms": 1.94
+        },
+        "generation": {
+          "p50_ms": 0.0,
+          "p95_ms": 0.0,
+          "min_ms": 0.0,
+          "max_ms": 0.0
+        },
+        "total": {
+          "p50_ms": 18.63,
+          "p95_ms": 2556.43,
+          "min_ms": 17.75,
+          "max_ms": 3921.79
+        }
+      },
+      "performance_by_state": {
+        "cold": {
+          "embedding": {
+            "p50_ms": 3917.32,
+            "p95_ms": 3917.32,
+            "min_ms": 3917.32,
+            "max_ms": 3917.32
+          },
+          "retrieval": {
+            "p50_ms": 2.53,
+            "p95_ms": 2.53,
+            "min_ms": 2.53,
+            "max_ms": 2.53
+          },
+          "grounding": {
+            "p50_ms": 1.94,
+            "p95_ms": 1.94,
+            "min_ms": 1.94,
+            "max_ms": 1.94
+          },
+          "generation": {
+            "p50_ms": 0.0,
+            "p95_ms": 0.0,
+            "min_ms": 0.0,
+            "max_ms": 0.0
+          },
+          "total": {
+            "p50_ms": 3921.79,
+            "p95_ms": 3921.79,
+            "min_ms": 3921.79,
+            "max_ms": 3921.79
+          }
+        },
+        "warm": {
+          "embedding": {
+            "p50_ms": 14.17,
+            "p95_ms": 16.06,
+            "min_ms": 13.7,
+            "max_ms": 16.74
+          },
+          "retrieval": {
+            "p50_ms": 2.55,
+            "p95_ms": 3.11,
+            "min_ms": 2.54,
+            "max_ms": 3.18
+          },
+          "grounding": {
+            "p50_ms": 1.56,
+            "p95_ms": 1.73,
+            "min_ms": 1.48,
+            "max_ms": 1.79
+          },
+          "generation": {
+            "p50_ms": 0.0,
+            "p95_ms": 0.0,
+            "min_ms": 0.0,
+            "max_ms": 0.0
+          },
+          "total": {
+            "p50_ms": 18.58,
+            "p95_ms": 20.26,
+            "min_ms": 17.75,
+            "max_ms": 20.77
+          }
+        }
+      },
+      "errors": {},
+      "cases": [
+        {
+          "id": "val-atlas-restore-equivalent",
+          "run_state": "cold",
+          "passed": false,
+          "status_ok": false,
+          "retrieval_ok": true,
+          "facts_ok": false,
+          "language_ok": true,
+          "citations_ok": false,
+          "generation_mode": "none",
+          "failure_stage": "generation",
+          "retrieval_metrics": {
+            "eligible": true,
+            "recall_at_1": 1.0,
+            "precision_at_1": 1.0,
+            "recall_at_3": 1.0,
+            "precision_at_3": 0.6666666666666666,
+            "recall_at_5": 1.0,
+            "precision_at_5": 0.4,
+            "recall_at_8": 1.0,
+            "precision_at_8": 0.25,
+            "reciprocal_rank": 1.0
+          },
+          "stages": {
+            "embedding_ms": 3917.32,
+            "retrieval_ms": 2.53,
+            "grounding_ms": 1.94,
+            "generation_ms": 0.0,
+            "generation_calls": 0,
+            "total_ms": 3921.79,
+            "process_peak_rss_mb": 1217.29,
+            "host_peak_used_mb": 9260.44
+          },
+          "error": null
+        },
+        {
+          "id": "val-atlas-route-target",
+          "run_state": "warm",
+          "passed": false,
+          "status_ok": false,
+          "retrieval_ok": true,
+          "facts_ok": false,
+          "language_ok": true,
+          "citations_ok": false,
+          "generation_mode": "none",
+          "failure_stage": "generation",
+          "retrieval_metrics": {
+            "eligible": true,
+            "recall_at_1": 0.0,
+            "precision_at_1": 0.0,
+            "recall_at_3": 1.0,
+            "precision_at_3": 0.3333333333333333,
+            "recall_at_5": 1.0,
+            "precision_at_5": 0.2,
+            "recall_at_8": 1.0,
+            "precision_at_8": 0.125,
+            "reciprocal_rank": 0.5
+          },
+          "stages": {
+            "embedding_ms": 16.74,
+            "retrieval_ms": 2.54,
+            "grounding_ms": 1.48,
+            "generation_ms": 0.0,
+            "generation_calls": 0,
+            "total_ms": 20.77,
+            "process_peak_rss_mb": 959.35,
+            "host_peak_used_mb": 8988.28
+          },
+          "error": null
+        },
+        {
+          "id": "val-atlas-gateway-slo",
+          "run_state": "warm",
+          "passed": false,
+          "status_ok": false,
+          "retrieval_ok": true,
+          "facts_ok": false,
+          "language_ok": true,
+          "citations_ok": false,
+          "generation_mode": "none",
+          "failure_stage": "generation",
+          "retrieval_metrics": {
+            "eligible": true,
+            "recall_at_1": 1.0,
+            "precision_at_1": 1.0,
+            "recall_at_3": 1.0,
+            "precision_at_3": 0.3333333333333333,
+            "recall_at_5": 1.0,
+            "precision_at_5": 0.2,
+            "recall_at_8": 1.0,
+            "precision_at_8": 0.125,
+            "reciprocal_rank": 1.0
+          },
+          "stages": {
+            "embedding_ms": 14.1,
+            "retrieval_ms": 3.18,
+            "grounding_ms": 1.79,
+            "generation_ms": 0.0,
+            "generation_calls": 0,
+            "total_ms": 19.06,
+            "process_peak_rss_mb": 959.43,
+            "host_peak_used_mb": 8988.3
+          },
+          "error": null
+        },
+        {
+          "id": "val-atlas-oncall-first-check",
+          "run_state": "warm",
+          "passed": false,
+          "status_ok": false,
+          "retrieval_ok": true,
+          "facts_ok": false,
+          "language_ok": true,
+          "citations_ok": false,
+          "generation_mode": "none",
+          "failure_stage": "generation",
+          "retrieval_metrics": {
+            "eligible": true,
+            "recall_at_1": 1.0,
+            "precision_at_1": 1.0,
+            "recall_at_3": 1.0,
+            "precision_at_3": 0.3333333333333333,
+            "recall_at_5": 1.0,
+            "precision_at_5": 0.2,
+            "recall_at_8": 1.0,
+            "precision_at_8": 0.125,
+            "reciprocal_rank": 1.0
+          },
+          "stages": {
+            "embedding_ms": 14.18,
+            "retrieval_ms": 2.55,
+            "grounding_ms": 1.52,
+            "generation_ms": 0.0,
+            "generation_calls": 0,
+            "total_ms": 18.26,
+            "process_peak_rss_mb": 959.61,
+            "host_peak_used_mb": 8988.31
+          },
+          "error": null
+        },
+        {
+          "id": "val-atlas-rollback-sequence",
+          "run_state": "warm",
+          "passed": false,
+          "status_ok": false,
+          "retrieval_ok": true,
+          "facts_ok": false,
+          "language_ok": true,
+          "citations_ok": false,
+          "generation_mode": "none",
+          "failure_stage": "retrieval",
+          "retrieval_metrics": {
+            "eligible": true,
+            "recall_at_1": 0.5,
+            "precision_at_1": 1.0,
+            "recall_at_3": 0.5,
+            "precision_at_3": 0.3333333333333333,
+            "recall_at_5": 0.5,
+            "precision_at_5": 0.2,
+            "recall_at_8": 0.5,
+            "precision_at_8": 0.125,
+            "reciprocal_rank": 1.0
+          },
+          "stages": {
+            "embedding_ms": 14.07,
+            "retrieval_ms": 2.63,
+            "grounding_ms": 1.58,
+            "generation_ms": 0.0,
+            "generation_calls": 0,
+            "total_ms": 18.29,
+            "process_peak_rss_mb": 959.69,
+            "host_peak_used_mb": 8988.34
+          },
+          "error": null
+        },
+        {
+          "id": "val-atlas-service-operation",
+          "run_state": "warm",
+          "passed": false,
+          "status_ok": false,
+          "retrieval_ok": true,
+          "facts_ok": false,
+          "language_ok": true,
+          "citations_ok": false,
+          "generation_mode": "none",
+          "failure_stage": "generation",
+          "retrieval_metrics": {
+            "eligible": true,
+            "recall_at_1": 1.0,
+            "precision_at_1": 1.0,
+            "recall_at_3": 1.0,
+            "precision_at_3": 0.3333333333333333,
+            "recall_at_5": 1.0,
+            "precision_at_5": 0.2,
+            "recall_at_8": 1.0,
+            "precision_at_8": 0.125,
+            "reciprocal_rank": 1.0
+          },
+          "stages": {
+            "embedding_ms": 14.49,
+            "retrieval_ms": 2.54,
+            "grounding_ms": 1.56,
+            "generation_ms": 0.0,
+            "generation_calls": 0,
+            "total_ms": 18.58,
+            "process_peak_rss_mb": 959.75,
+            "host_peak_used_mb": 8988.37
+          },
+          "error": null
+        },
+        {
+          "id": "val-negative-benefits",
+          "run_state": "warm",
+          "passed": true,
+          "status_ok": true,
+          "retrieval_ok": true,
+          "facts_ok": true,
+          "language_ok": true,
+          "citations_ok": true,
+          "generation_mode": "none",
+          "failure_stage": null,
+          "retrieval_metrics": {
+            "eligible": false,
+            "recall_at_1": null,
+            "recall_at_3": null,
+            "recall_at_5": null,
+            "recall_at_8": null,
+            "reciprocal_rank": null,
+            "precision_at_1": null,
+            "precision_at_3": null,
+            "precision_at_5": null,
+            "precision_at_8": null
+          },
+          "stages": {
+            "embedding_ms": 13.7,
+            "retrieval_ms": 2.54,
+            "grounding_ms": 1.51,
+            "generation_ms": 0.0,
+            "generation_calls": 0,
+            "total_ms": 17.75,
+            "process_peak_rss_mb": 959.85,
+            "host_peak_used_mb": 8988.37
+          },
+          "error": null
+        },
+        {
+          "id": "val-negative-office",
+          "run_state": "warm",
+          "passed": true,
+          "status_ok": true,
+          "retrieval_ok": true,
+          "facts_ok": true,
+          "language_ok": true,
+          "citations_ok": true,
+          "generation_mode": "none",
+          "failure_stage": null,
+          "retrieval_metrics": {
+            "eligible": false,
+            "recall_at_1": null,
+            "recall_at_3": null,
+            "recall_at_5": null,
+            "recall_at_8": null,
+            "reciprocal_rank": null,
+            "precision_at_1": null,
+            "precision_at_3": null,
+            "precision_at_5": null,
+            "precision_at_8": null
+          },
+          "stages": {
+            "embedding_ms": 14.17,
+            "retrieval_ms": 2.94,
+            "grounding_ms": 1.57,
+            "generation_ms": 0.0,
+            "generation_calls": 0,
+            "total_ms": 18.68,
+            "process_peak_rss_mb": 959.9,
+            "host_peak_used_mb": 8988.37
+          },
+          "error": null
+        }
+      ],
+      "indexing_ms": 4410.05,
+      "index_fingerprint": {
+        "extractor": "extractors-v1",
+        "chunker": "whitespace-window-v1",
+        "chunk_tokens": 500,
+        "chunk_overlap": 75,
+        "embedding_model": "intfloat/multilingual-e5-small",
+        "embedding_revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+        "dimension": 384,
+        "normalize": true,
+        "query_prefix": "query: ",
+        "passage_prefix": "passage: ",
+        "payload_schema_version": 2,
+        "digest": "724f6786a9170f8b"
+      },
+      "model_memory": {
+        "resident_mb": 0.0,
+        "vram_mb": 0.0
+      }
+    }
+  ]
+}

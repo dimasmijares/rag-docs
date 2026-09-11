@@ -96,6 +96,9 @@ class FakeVectorStore:
             for chunk in self.chunks.get(document_id, [])
         ]
 
+    def scan_chunks(self, scope=None) -> list[DocumentChunk]:
+        return [chunk for chunks in self.chunks.values() for chunk in chunks]
+
 
 class FakeGenerator:
     model_name = "fake-generator"

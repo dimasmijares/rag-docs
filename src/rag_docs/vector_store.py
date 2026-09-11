@@ -40,6 +40,8 @@ class VectorStore(Protocol):
 
     def update_acl(self, document_id: str, acl: AclFields) -> None: ...
 
+    def scan_chunks(self, scope: Scope) -> list[DocumentChunk]: ...
+
 
 class QdrantVectorStore:
     """Qdrant adapter. ``collection_name`` is the logical name configured by the
@@ -316,23 +318,11 @@ class QdrantVectorStore:
     def search(
         self, vector: list[float], limit: int, score_threshold: float | None, scope: Scope
     ) -> list[SearchHit]:
-        from qdrant_client.models import FieldCondition, Filter, MatchAny, MatchValue
-
         self._check_bound()
         response = self.client.query_points(
             collection_name=self.collection_name,
             query=vector,
-            query_filter=Filter(
-                must=[
-                    FieldCondition(key="tenant_id", match=MatchValue(value=scope.tenant)),
-                    FieldCondition(
-                        key="acl_subjects", match=MatchAny(any=list(scope.subjects))
-                    ),
-                    FieldCondition(
-                        key="classification", match=MatchAny(any=list(scope.classifications))
-                    ),
-                ]
-            ),
+            query_filter=self._scope_filter(scope),
             limit=limit,
             score_threshold=score_threshold,
             with_payload=True,
@@ -342,6 +332,44 @@ class QdrantVectorStore:
             SearchHit(chunk=chunk_from_payload(point.payload or {}), score=float(point.score))
             for point in response.points
         ]
+
+    @staticmethod
+    def _scope_filter(scope: Scope):
+        from qdrant_client.models import FieldCondition, Filter, MatchAny, MatchValue
+
+        return Filter(
+            must=[
+                FieldCondition(key="tenant_id", match=MatchValue(value=scope.tenant)),
+                FieldCondition(key="acl_subjects", match=MatchAny(any=list(scope.subjects))),
+                FieldCondition(
+                    key="classification", match=MatchAny(any=list(scope.classifications))
+                ),
+            ]
+        )
+
+    def scan_chunks(self, scope: Scope) -> list[DocumentChunk]:
+        """Every chunk visible under ``scope``, for retrieval strategies that
+        need the full corpus rather than a vector similarity search — the
+        BM25 lexical index of ``WRK-TASK-037`` is the current caller. Reuses
+        the same scope filter as ``search`` so a lexical hit is never a chunk
+        the authorization prefilter would have rejected."""
+        self._check_bound()
+        chunks: list[DocumentChunk] = []
+        offset = None
+        scope_filter = self._scope_filter(scope)
+        while True:
+            points, offset = self.client.scroll(
+                collection_name=self.collection_name,
+                scroll_filter=scope_filter,
+                limit=256,
+                offset=offset,
+                with_payload=True,
+                with_vectors=False,
+            )
+            chunks.extend(chunk_from_payload(point.payload or {}) for point in points)
+            if offset is None:
+                break
+        return chunks
 
     def update_acl(self, document_id: str, acl: AclFields) -> None:
         """Change a document's ACL by ``document_id`` without recomputing any

@@ -10,6 +10,8 @@ from rag_docs.contracts import (
     Citation,
     QueryResult,
     RetrievalDiagnostic,
+    Scope,
+    SearchHit,
 )
 from rag_docs.embeddings import Embedder
 from rag_docs.generation import (
@@ -20,6 +22,7 @@ from rag_docs.generation import (
 )
 from rag_docs.grounding import AnswerValidator, ContextBuilder
 from rag_docs.language import SupportedLanguage, infer_question_language
+from rag_docs.lexical import BM25Index, reciprocal_rank_fusion
 from rag_docs.vector_store import VectorStore
 
 __all__ = [
@@ -42,10 +45,11 @@ class QueryService:
     logic directly. ``authorizer`` resolves the ``Scope`` every search is
     prefiltered by (``ADR-RAG-009``, ``WRK-TASK-082``); the ``v0.3.0``
     implementation is single-tenant, and ``v1.5.0`` can replace it without
-    touching this class. Wiring the Scope-aware ``RetrievalPort`` itself is
-    deliberately left to ``WRK-TASK-037``, which is why this service still
-    depends on the narrower ``Embedder``/``VectorStore``/``Generator``
-    adapters used today.
+    touching this class. ``retrieval_strategy`` selects between the dense
+    vector search used since the PoC and the BM25+dense hybrid of
+    ``WRK-TASK-037``, fused by reciprocal rank fusion (``rag_docs.lexical``);
+    it defaults to ``"dense"`` because hybrid is adopted only where a
+    measured comparison shows it wins (``RFC-001`` gate G2), not by default.
     """
 
     def __init__(
@@ -58,6 +62,7 @@ class QueryService:
         min_score: float = 0.45,
         generation_strategy: Literal["llm", "extractive_fallback"] = "llm",
         authorizer: AuthorizationPort | None = None,
+        retrieval_strategy: Literal["dense", "hybrid"] = "dense",
     ) -> None:
         self.embedder = embedder
         self.store = store
@@ -66,6 +71,7 @@ class QueryService:
         self.min_score = min_score
         self.generation_strategy = generation_strategy
         self.authorizer = authorizer or SingleTenantAuthorization()
+        self.retrieval_strategy = retrieval_strategy
         self.context_builder = ContextBuilder(context_chunks=context_chunks)
         self.validator = AnswerValidator()
 
@@ -127,6 +133,21 @@ class QueryService:
             claims.append(AnswerClaim(text=text, citations=references))
         return "\n\n".join(rendered), claims
 
+    def _retrieve(self, question: str, vector: list[float], scope: Scope) -> list[SearchHit]:
+        """Dense search, or dense+BM25 fused by reciprocal rank fusion when
+        ``retrieval_strategy`` is ``"hybrid"`` (``WRK-TASK-037``). The dense
+        phase drops ``min_score`` for hybrid: RRF scores and cosine
+        similarity live on different scales, so the threshold tuned for one
+        is meaningless for the other, and ``ContextBuilder`` already bounds
+        and deduplicates whatever comes out of either path.
+        """
+        if self.retrieval_strategy == "dense":
+            return self.store.search(vector, self.top_k, self.min_score, scope)
+        dense_hits = self.store.search(vector, self.top_k, None, scope)
+        lexical_index = BM25Index(self.store.scan_chunks(scope))
+        lexical_hits = lexical_index.search(question, self.top_k)
+        return reciprocal_rank_fusion(dense_hits, lexical_hits, limit=self.top_k)
+
     def query(self, question: str) -> QueryResult:
         question = question.strip()
         if not question:
@@ -134,7 +155,7 @@ class QueryService:
         expected_language = infer_question_language(question)
         vector = self.embedder.embed_query(question)
         scope = self.authorizer.resolve_scope(None)
-        hits = self.store.search(vector, self.top_k, self.min_score, scope)
+        hits = self._retrieve(question, vector, scope)
         built = self.context_builder.build(question, hits)
 
         if not built.selected:
