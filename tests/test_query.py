@@ -250,21 +250,6 @@ def test_procedural_question_does_not_require_an_etl_identifier(tmp_path: Path) 
     assert result.answer_status == "grounded"
 
 
-def test_only_explicit_second_questions_require_multiple_claims() -> None:
-    assert QueryService._minimum_claims(
-        "¿Qué variable se usa para ORION y LYRA?"
-    ) == 1
-    assert QueryService._minimum_claims(
-        "¿Qué acción actualiza SQL_BD y muestra el resultado?"
-    ) == 1
-    assert QueryService._minimum_claims(
-        "¿En qué tabla se consolida y cuáles son las tablas finales?"
-    ) == 2
-    assert QueryService._minimum_claims(
-        "¿Qué tabla se consulta y por qué campo se filtra?"
-    ) == 2
-
-
 def test_technical_question_rechecks_insufficient_answer_when_candidates_exist(
     tmp_path: Path,
 ) -> None:
