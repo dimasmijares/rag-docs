@@ -1,0 +1,18 @@
+schema_version: "1.0"
+corpus_version: "0.2.0"
+corpus_manifest: examples/corpus/demo/manifest.sha256
+gold_sets:
+  smoke: evaluation/gold-set.yaml
+  dev: evaluation/gold-set.dev.yaml
+  validation: evaluation/gold-set.validation.yaml
+# Fingerprints con los que el corpus_version de arriba es comparable
+# (RULE-004, ADR-RAG-011). Lista aditiva: un nuevo perfil de indexación
+# compatible con este mismo corpus añade su digest aquí; no reemplaza
+# los anteriores. Calculado con build_fingerprint() sobre los parámetros
+# fijados en config/benchmark.yaml.
+compatible_fingerprint_digests:
+  - 91e7717e96ab15ea
+policy: >-
+  El corpus es aditivo (ADR-RAG-011): una versión nueva se publica con su propio
+  corpus_version, manifiesto y compatibility.yaml, y nunca muta ni sobrescribe una
+  versión anterior, que se conserva íntegra como serie de regresión independiente.

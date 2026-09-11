@@ -13,6 +13,53 @@ import yaml
 
 from rag_docs.language import normalized_contains, text_matches_language
 
+DEFAULT_CORPUS_COMPATIBILITY = Path("evaluation/corpus-compatibility.yaml")
+
+
+def load_corpus_compatibility(path: Path) -> dict[str, Any]:
+    """Corpus/gold-set/fingerprint compatibility manifest (``ADR-RAG-011``,
+    ``WRK-TASK-086``): which ``corpus_version`` a gold set was written against
+    and which ``IndexFingerprint`` digests a report built on that corpus is
+    comparable with."""
+    return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+
+
+def verify_gold_corpus_version(gold: dict[str, Any], compatibility: dict[str, Any]) -> None:
+    """A gold set that does not declare the ``corpus_version`` the active
+    compatibility manifest expects fails explicitly instead of silently
+    producing low retrieval metrics against locators that moved."""
+    declared = gold.get("corpus_version")
+    expected = compatibility.get("corpus_version")
+    if not declared:
+        raise ValueError(
+            "El gold set no declara corpus_version; no es comparable con el "
+            "manifiesto de compatibilidad activo."
+        )
+    if declared != expected:
+        raise ValueError(
+            f"El gold set declara corpus_version={declared!r}, pero el manifiesto de "
+            f"compatibilidad activo es corpus_version={expected!r}. No son comparables "
+            "sin una declaración explícita de re-baseline."
+        )
+
+
+def verify_fingerprint_compatibility(
+    compatibility: dict[str, Any], fingerprint_digest: str
+) -> None:
+    """The ``IndexFingerprint`` actually in effect must be one this
+    ``corpus_version`` was declared compatible with, or the run fails
+    explicitly (``RULE-004``, ``ADR-RAG-011``) instead of reporting metrics
+    that look like a quality regression."""
+    compatible = set(compatibility.get("compatible_fingerprint_digests") or [])
+    if fingerprint_digest not in compatible:
+        raise RuntimeError(
+            f"El fingerprint vigente ({fingerprint_digest}) no está declarado compatible "
+            f"con corpus_version={compatibility.get('corpus_version')!r} en "
+            "compatibility.yaml. Añade el digest si el cambio es intencional, o revisa la "
+            "configuración: no se ejecuta el benchmark/evaluación contra una combinación "
+            "no verificada."
+        )
+
 
 def _percentile(values: list[float], percentile: float) -> float:
     if not values:
@@ -239,8 +286,15 @@ def evaluate_case(case: dict[str, Any], payload: dict[str, Any]) -> dict[str, An
     }
 
 
-def evaluate(base_url: str, gold_path: Path) -> dict[str, Any]:
+def evaluate(
+    base_url: str,
+    gold_path: Path,
+    *,
+    compatibility_path: Path = DEFAULT_CORPUS_COMPATIBILITY,
+) -> dict[str, Any]:
     gold = yaml.safe_load(gold_path.read_text(encoding="utf-8"))
+    compatibility = load_corpus_compatibility(compatibility_path)
+    verify_gold_corpus_version(gold, compatibility)
     results: list[dict[str, Any]] = []
     with httpx.Client(base_url=base_url, timeout=240) as client:
         for case in gold["cases"]:
@@ -276,9 +330,20 @@ def evaluate(base_url: str, gold_path: Path) -> dict[str, Any]:
                 )
     passed = sum(item["passed"] for item in results)
     latencies = [float(item["latency_ms"]) for item in results]
+    observed_models = {
+        (item.get("model"), item.get("embedding_model"))
+        for item in results
+        if item.get("model") or item.get("embedding_model")
+    }
     return {
         "timestamp": datetime.now(UTC).isoformat(),
         "gold_set": str(gold_path),
+        "corpus_version": gold.get("corpus_version"),
+        "config_snapshot": {
+            "model": next(iter(observed_models))[0] if observed_models else None,
+            "embedding_model": next(iter(observed_models))[1] if observed_models else None,
+            "consistent_across_cases": len(observed_models) <= 1,
+        },
         "passed": passed,
         "total": len(results),
         "score": passed / len(results) if results else 0,
@@ -306,9 +371,14 @@ def run() -> None:
     parser = argparse.ArgumentParser(description="Evalúa rag-docs contra el gold set")
     parser.add_argument("--base-url", default="http://127.0.0.1:8000")
     parser.add_argument("--gold", type=Path, default=Path("evaluation/gold-set.yaml"))
+    parser.add_argument(
+        "--corpus-compatibility", type=Path, default=DEFAULT_CORPUS_COMPATIBILITY
+    )
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
-    report = evaluate(args.base_url, args.gold)
+    report = evaluate(
+        args.base_url, args.gold, compatibility_path=args.corpus_compatibility
+    )
     output = args.output or Path("logs") / f"evaluation-{datetime.now():%Y%m%d-%H%M%S}.json"
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")

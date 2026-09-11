@@ -7,7 +7,7 @@ import os
 import platform
 import subprocess
 import threading
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from time import perf_counter
@@ -19,8 +19,17 @@ import psutil
 import yaml
 
 from rag_docs.config import SourceDefinition, load_sources
+from rag_docs.contracts import IndexFingerprint
 from rag_docs.embeddings import Embedder, SentenceTransformerEmbedder
-from rag_docs.evaluation import _percentile, aggregate_retrieval_metrics, evaluate_case
+from rag_docs.evaluation import (
+    DEFAULT_CORPUS_COMPATIBILITY,
+    _percentile,
+    aggregate_retrieval_metrics,
+    evaluate_case,
+    load_corpus_compatibility,
+    verify_fingerprint_compatibility,
+    verify_gold_corpus_version,
+)
 from rag_docs.generation import (
     GeneratedResponse,
     Generator,
@@ -41,6 +50,16 @@ DEFAULT_DECISION = Path("evaluation/benchmarks/wrk-task-027/decision-lock.json")
 DEFAULT_VALIDATION_REPORT = Path(
     "evaluation/benchmarks/wrk-task-027/validation-results.json"
 )
+
+
+class RebaselineRequired(RuntimeError):
+    """Raised by ``compare_reports`` when two reports do not share the same
+    ``corpus_version``/``IndexFingerprint`` triplet and no explicit
+    re-baseline was declared (``ADR-RAG-011``)."""
+
+
+def _fingerprint_payload(fingerprint: IndexFingerprint) -> dict[str, Any]:
+    return {**asdict(fingerprint), "digest": fingerprint.digest()}
 
 
 def _utc_now() -> str:
@@ -428,7 +447,7 @@ def _build_services(
     config: dict[str, Any],
     source_definitions: list[SourceDefinition],
     ollama_url: str,
-) -> tuple[QueryService, StageRecorder, float]:
+) -> tuple[QueryService, StageRecorder, float, IndexFingerprint]:
     index_embedder = SentenceTransformerEmbedder(
         str(profile["embedding_model"]),
         int(config["embedding_batch_size"]),
@@ -437,13 +456,15 @@ def _build_services(
     store = QdrantVectorStore(":memory:", f"benchmark_{profile['id']}")
     sources = [LocalFolderSource(item) for item in source_definitions]
     started = perf_counter()
-    index_report = IndexingService(
+    indexing_service = IndexingService(
         sources,
         index_embedder,
         store,
         int(config["chunk_tokens"]),
         int(config["chunk_overlap"]),
-    ).index()
+    )
+    index_report = indexing_service.index()
+    fingerprint = indexing_service.fingerprint
     indexing_ms = (perf_counter() - started) * 1000
     if index_report.errors:
         raise RuntimeError(f"La indexación falló en {len(index_report.errors)} documento(s)")
@@ -477,7 +498,7 @@ def _build_services(
         if profile["generator_mode"] == "forced_fallback"
         else "llm",
     )
-    return service, recorder, indexing_ms
+    return service, recorder, indexing_ms, fingerprint
 
 
 def _run_profile(
@@ -487,12 +508,14 @@ def _run_profile(
     source_definitions: list[SourceDefinition],
     _root: Path,
     ollama_url: str,
+    compatibility: dict[str, Any],
 ) -> dict[str, Any]:
     if profile["generator_mode"] == "ollama":
         _unload_ollama(ollama_url, str(profile["generator_model"]))
-    service, recorder, indexing_ms = _build_services(
+    service, recorder, indexing_ms, fingerprint = _build_services(
         profile, config, source_definitions, ollama_url
     )
+    verify_fingerprint_compatibility(compatibility, fingerprint.digest())
     cases: list[dict[str, Any]] = []
     for index, case in enumerate(gold["cases"]):
         recorder.embedding_ms = 0.0
@@ -544,6 +567,7 @@ def _run_profile(
         cases.append(_public_case(evaluated, stages))
     aggregated = _aggregate_profile(profile, cases)
     aggregated["indexing_ms"] = round(indexing_ms, 2)
+    aggregated["index_fingerprint"] = _fingerprint_payload(fingerprint)
     aggregated["model_memory"] = (
         _model_memory(ollama_url, str(profile["generator_model"]))
         if profile["generator_mode"] == "ollama"
@@ -609,9 +633,12 @@ def execute_phase(
         raise ValueError("La fuente demo debe resolver a examples/corpus/demo")
     manifest_path = (root / str(config["corpus_manifest"])).resolve()
     _verify_manifest(manifest_path)
+    compatibility_path = (root / DEFAULT_CORPUS_COMPATIBILITY).resolve()
+    compatibility = load_corpus_compatibility(compatibility_path)
+    verify_gold_corpus_version(gold, compatibility)
     started = _utc_now()
     results = [
-        _run_profile(item, config, gold, source_definitions, root, ollama_url)
+        _run_profile(item, config, gold, source_definitions, root, ollama_url, compatibility)
         for item in profiles
     ]
     report = {
@@ -627,6 +654,8 @@ def execute_phase(
         "gold_sha256": _sha256(gold_path),
         "source_sha256": _sha256(source_path),
         "corpus_manifest_sha256": _sha256(manifest_path),
+        "corpus_version": compatibility["corpus_version"],
+        "corpus_compatibility_sha256": _sha256(compatibility_path),
         "seed": int(config["seed"]),
         "shared_config": {
             key: config[key]
@@ -690,6 +719,8 @@ def select_baseline(config_path: Path, dev_report_path: Path, output: Path) -> d
         "development_gold_sha256": report["gold_sha256"],
         "validation_gold_sha256": _sha256(validation_path),
         "corpus_manifest_sha256": report["corpus_manifest_sha256"],
+        "corpus_version": report.get("corpus_version"),
+        "corpus_compatibility_sha256": report.get("corpus_compatibility_sha256"),
         "source_sha256": report["source_sha256"],
         "development_report_sha256": _sha256(dev_report_path),
         "validation_executions_allowed": 1,
@@ -722,6 +753,8 @@ def execute_validation(
         == decision["validation_gold_sha256"],
         "corpus_manifest": _sha256(root / str(config["corpus_manifest"]))
         == decision["corpus_manifest_sha256"],
+        "corpus_compatibility": _sha256((root / DEFAULT_CORPUS_COMPATIBILITY).resolve())
+        == decision.get("corpus_compatibility_sha256"),
         "source": _sha256(root / str(config["source_file"]))
         == decision["source_sha256"],
     }
@@ -764,11 +797,75 @@ def verify_artifacts(
         "source_hash": _sha256(root / str(config["source_file"]))
         == decision["source_sha256"],
         "decision_hash": validation.get("decision_sha256") == _sha256(decision_path),
+        "corpus_version_match": dev.get("corpus_version") == validation.get("corpus_version")
+        == decision.get("corpus_version"),
     }
     failed = [name for name, passed in checks.items() if not passed]
     if failed:
         raise RuntimeError(f"Artefactos de benchmark inválidos: {', '.join(failed)}")
     return checks
+
+
+def compare_reports(
+    previous_path: Path,
+    current_path: Path,
+    *,
+    profile_id: str,
+    rebaseline: bool = False,
+) -> dict[str, Any]:
+    """Compares one profile across two benchmark reports (``ADR-RAG-011``,
+    ``WRK-TASK-086``). A ``corpus_version``/``IndexFingerprint`` triplet that
+    differs between the two means the runs are not directly comparable: the
+    delta cannot be presented as a regression or an improvement without an
+    explicit ``rebaseline=True`` declaration."""
+
+    def _profile(report: dict[str, Any], path: Path) -> dict[str, Any]:
+        match = next(
+            (item for item in report.get("profiles", []) if item["profile_id"] == profile_id),
+            None,
+        )
+        if match is None:
+            raise ValueError(f"{path} no contiene el perfil {profile_id!r}")
+        return match
+
+    previous = _load_json(previous_path)
+    current = _load_json(current_path)
+    previous_profile = _profile(previous, previous_path)
+    current_profile = _profile(current, current_path)
+    previous_triplet = (
+        previous.get("corpus_version"),
+        previous_profile.get("index_fingerprint", {}).get("digest"),
+    )
+    current_triplet = (
+        current.get("corpus_version"),
+        current_profile.get("index_fingerprint", {}).get("digest"),
+    )
+    comparable = previous_triplet == current_triplet
+    if not comparable and not rebaseline:
+        raise RebaselineRequired(
+            f"corpus_version/index_fingerprint difieren entre informes para {profile_id!r}: "
+            f"{previous_triplet} -> {current_triplet}. El delta no puede presentarse como "
+            "regresión ni como mejora sin una declaración explícita de re-baseline "
+            "(--rebaseline)."
+        )
+    return {
+        "profile_id": profile_id,
+        "comparable": comparable,
+        "rebaseline_declared": rebaseline,
+        "previous": {
+            "corpus_version": previous_triplet[0],
+            "index_fingerprint": previous_triplet[1],
+            "score": previous_profile["score"],
+        },
+        "current": {
+            "corpus_version": current_triplet[0],
+            "index_fingerprint": current_triplet[1],
+            "score": current_profile["score"],
+        },
+        "score_delta": (
+            current_profile["score"] - previous_profile["score"] if comparable else None
+        ),
+    }
 
 
 def run() -> None:
@@ -787,6 +884,11 @@ def run() -> None:
     verify.add_argument("--development", type=Path, default=DEFAULT_DEV_REPORT)
     verify.add_argument("--decision", type=Path, default=DEFAULT_DECISION)
     verify.add_argument("--validation", type=Path, default=DEFAULT_VALIDATION_REPORT)
+    compare = subparsers.add_parser("compare")
+    compare.add_argument("--previous", type=Path, required=True)
+    compare.add_argument("--current", type=Path, required=True)
+    compare.add_argument("--profile-id", required=True)
+    compare.add_argument("--rebaseline", action="store_true")
     args = parser.parse_args()
     if args.command == "development":
         result = execute_phase(args.config, "development", args.output)
@@ -794,6 +896,13 @@ def run() -> None:
         result = select_baseline(args.config, args.development, args.output)
     elif args.command == "validation":
         result = execute_validation(args.config, args.decision, args.output)
+    elif args.command == "compare":
+        result = compare_reports(
+            args.previous,
+            args.current,
+            profile_id=args.profile_id,
+            rebaseline=args.rebaseline,
+        )
     else:
         result = verify_artifacts(
             args.config, args.development, args.decision, args.validation
