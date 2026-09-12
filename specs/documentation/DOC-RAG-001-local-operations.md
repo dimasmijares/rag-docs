@@ -5,9 +5,9 @@ layer: documentation
 scope: persistent
 status: active
 confidence: medium
-version: 1.3.0
+version: 1.4.0
 created: 2026-08-25
-updated: 2026-08-31
+updated: 2026-09-12
 owner: rag-docs-team
 dependencies:
   - id: ARCH-001
@@ -23,13 +23,17 @@ Definir la documentación mínima para instalar, configurar, ejecutar, evaluar y
 
 ## Definition
 
-La guía debe cubrir Python 3.11, KDD, Docker/Qdrant, Ollama, `sources.yaml`, API/web, gold set, privacidad y solución de problemas.
+La guía debe cubrir Python 3.11, KDD, Docker/Qdrant, Ollama, `sources.yaml`, API/web, gold set,
+privacidad, solución de problemas, y el modelo de invariantes de índice de `v0.3.0`: fingerprint
+del índice, ámbito de autorización obligatorio y política de comparabilidad entre evaluaciones.
 
 ## Acceptance Criteria
 
 - [x] Un desarrollador puede ejecutar validaciones sin conocimiento previo del repositorio.
 - [x] Las dependencias externas y sus comprobaciones de salud están documentadas.
 - [x] Se diferencia el corpus didáctico del corporativo ignorado por Git.
+- [x] El fingerprint del índice, el ámbito obligatorio y la política de comparabilidad están
+      documentados con referencia a los mecanismos que los implementan.
 
 ## Evidence
 
@@ -41,6 +45,12 @@ La guía debe cubrir Python 3.11, KDD, Docker/Qdrant, Ollama, `sources.yaml`, AP
   `.env.example`; flujo validado en `WRK-TASK-021`.
 - Descubrimiento de modelos instalados y activación segura documentados y verificados en
   `WRK-TASK-022`.
+- **`WRK-TASK-091`:** nueva sección "Índice: fingerprint, ámbito y comparabilidad" en `README.md`
+  documenta `IndexFingerprint`/alias/migración (`RULE-004`), `Scope` obligatorio sin valor por
+  defecto en `VectorStorePort` (`RULE-003`, `ADR-RAG-009`) y la política de comparabilidad de
+  `corpus_version`/`index_fingerprint` entre evaluaciones con el criterio de adopción de retrieval
+  (`ADR-RAG-011`, `RFC-001` gate G2), enlazando los resultados medidos de `WRK-TASK-037`/`038` y
+  `ADR-RAG-012`.
 
 ## Traceability
 
