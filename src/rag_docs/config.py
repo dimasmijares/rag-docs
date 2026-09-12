@@ -61,6 +61,15 @@ class Settings(BaseSettings):
     min_score: float = 0.45
     chunk_tokens: int = 500
     chunk_overlap: int = 75
+    #: Cross-encoder reranking (WRK-TASK-038). ``None`` keeps v0.3.0 behavior
+    #: unchanged — no model download, no added latency — even though a
+    #: measured comparison showed a clean recall/MRR improvement on the
+    #: validation gold set with no regression at any cutoff (see
+    #: ADR-RAG-012). An operator opts in explicitly by setting this to a
+    #: sentence-transformers cross-encoder model name, e.g.
+    #: ``cross-encoder/mmarco-mMiniLMv2-L12-H384-v1``.
+    reranker_model: str | None = None
+    rerank_top_n: int | None = None
 
 
 def load_sources(path: Path) -> list[SourceDefinition]:

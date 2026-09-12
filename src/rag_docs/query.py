@@ -23,6 +23,7 @@ from rag_docs.generation import (
 from rag_docs.grounding import AnswerValidator, ContextBuilder
 from rag_docs.language import SupportedLanguage, infer_question_language
 from rag_docs.lexical import BM25Index, reciprocal_rank_fusion
+from rag_docs.reranking import Reranker
 from rag_docs.vector_store import VectorStore
 
 __all__ = [
@@ -50,6 +51,10 @@ class QueryService:
     ``WRK-TASK-037``, fused by reciprocal rank fusion (``rag_docs.lexical``);
     it defaults to ``"dense"`` because hybrid is adopted only where a
     measured comparison shows it wins (``RFC-001`` gate G2), not by default.
+    ``reranker`` (``WRK-TASK-038``) is an optional cross-encoder step applied
+    after retrieval and before context building; it defaults to ``None``
+    (no reranking) for the same reason — adoption follows measurement, not
+    the other way around.
     """
 
     def __init__(
@@ -63,6 +68,8 @@ class QueryService:
         generation_strategy: Literal["llm", "extractive_fallback"] = "llm",
         authorizer: AuthorizationPort | None = None,
         retrieval_strategy: Literal["dense", "hybrid"] = "dense",
+        reranker: Reranker | None = None,
+        rerank_top_n: int | None = None,
     ) -> None:
         self.embedder = embedder
         self.store = store
@@ -72,6 +79,8 @@ class QueryService:
         self.generation_strategy = generation_strategy
         self.authorizer = authorizer or SingleTenantAuthorization()
         self.retrieval_strategy = retrieval_strategy
+        self.reranker = reranker
+        self.rerank_top_n = rerank_top_n if rerank_top_n is not None else context_chunks
         self.context_builder = ContextBuilder(context_chunks=context_chunks)
         self.validator = AnswerValidator()
 
@@ -139,14 +148,21 @@ class QueryService:
         phase drops ``min_score`` for hybrid: RRF scores and cosine
         similarity live on different scales, so the threshold tuned for one
         is meaningless for the other, and ``ContextBuilder`` already bounds
-        and deduplicates whatever comes out of either path.
+        and deduplicates whatever comes out of either path. When ``reranker``
+        is set, the cross-encoder step (``WRK-TASK-038``) runs last, over
+        whichever list dense or hybrid retrieval produced, and narrows it to
+        ``rerank_top_n``.
         """
         if self.retrieval_strategy == "dense":
-            return self.store.search(vector, self.top_k, self.min_score, scope)
-        dense_hits = self.store.search(vector, self.top_k, None, scope)
-        lexical_index = BM25Index(self.store.scan_chunks(scope))
-        lexical_hits = lexical_index.search(question, self.top_k)
-        return reciprocal_rank_fusion(dense_hits, lexical_hits, limit=self.top_k)
+            hits = self.store.search(vector, self.top_k, self.min_score, scope)
+        else:
+            dense_hits = self.store.search(vector, self.top_k, None, scope)
+            lexical_index = BM25Index(self.store.scan_chunks(scope))
+            lexical_hits = lexical_index.search(question, self.top_k)
+            hits = reciprocal_rank_fusion(dense_hits, lexical_hits, limit=self.top_k)
+        if self.reranker is not None:
+            hits = self.reranker.rerank(question, hits, self.rerank_top_n)
+        return hits
 
     def query(self, question: str) -> QueryResult:
         question = question.strip()

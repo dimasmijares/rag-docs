@@ -5,6 +5,7 @@ from rag_docs.embeddings import SentenceTransformerEmbedder
 from rag_docs.generator_profiles import GeneratorProfile, GeneratorProfileRegistry
 from rag_docs.indexing import IndexingService
 from rag_docs.query import QueryService
+from rag_docs.reranking import CrossEncoderReranker
 from rag_docs.sources.local import LocalFolderSource
 from rag_docs.vector_store import QdrantVectorStore
 
@@ -65,6 +66,10 @@ class ApplicationContainer:
             self.settings.retrieval_top_k,
             self.settings.context_chunks,
             self.settings.min_score,
+            reranker=CrossEncoderReranker(self.settings.reranker_model)
+            if self.settings.reranker_model
+            else None,
+            rerank_top_n=self.settings.rerank_top_n,
         )
 
     def generator_profiles_state(self) -> dict:
