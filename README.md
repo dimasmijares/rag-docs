@@ -165,6 +165,46 @@ Los specs viven en `specs/`. Las decisiones nuevas se registran como ADR; cambio
 El roadmap completo desde la PoC hasta los ocho servicios en Kubernetes está gobernado por
 `WRK-SPEC-004` y sus planes de release `WRK-PLAN-005` a `011`.
 
+## Índice: fingerprint, ámbito y comparabilidad
+
+**Fingerprint del índice (`RULE-004`).** `IndexFingerprint` (`rag_docs.contracts`) cubre extractor,
+chunker, `chunk_tokens`/`chunk_overlap`, modelo y revisión de embeddings, dimensión, normalización,
+prefijos `query:`/`passage:` y la versión del esquema de payload. Su hash deriva el nombre físico de
+la colección de Qdrant; el nombre lógico configurado (`RAG_DOCS_QDRANT_COLLECTION`) es un alias que
+apunta a esa colección física. Escribir o consultar con un proceso cuyo fingerprint vinculado ya no
+coincide con el que resuelve el alias falla de forma explícita — nunca se sirve un resultado
+plausible sobre vectores incompatibles. Cambiar de configuración (modelo de embeddings, tamaño de
+chunk) requiere una migración explícita: `rag_docs.indexing.migrate_and_publish` construye la
+colección candidata fuera de línea, la valida contra un callback (típicamente un gold set) y sólo
+entonces mueve el alias; la colección anterior no se borra, así que
+`QdrantVectorStore.rollback_alias` puede restaurarla durante la ventana que decida el operador.
+`scripts/migration_drill.py` ejecuta este ciclo completo (migración, verificación de que una
+vinculación de fingerprint desactualizada rechaza la consulta, y rollback) contra el corpus
+sintético, sin Docker.
+
+**Ámbito obligatorio (`RULE-003`, `ADR-RAG-009`).** `VectorStorePort.search`/`scan_chunks` exigen un
+`Scope` (`tenant`, `subjects`, `classification`) sin valor por defecto: no existe una ruta de
+consulta que omita el prefiltrado de autorización. `AuthorizationPort.resolve_scope` lo resuelve por
+petición; `v0.3.0` implementa `SingleTenantAuthorization`, que siempre exige el mismo ámbito
+single-tenant, y `v1.5.0` puede sustituirla sin tocar `QueryService`. Cada chunk indexado lleva
+`tenant_id`/`acl_subjects`/`classification` como payload filtrable (con índices `KEYWORD` en
+Qdrant); `VectorStore.update_acl` cambia esos campos sin recalcular embeddings ni tocar el vector.
+
+**Política de comparabilidad (`ADR-RAG-011`, `WRK-TASK-086`).** Todo informe de evaluación o
+benchmark declara `corpus_version`, `index_fingerprint` y la configuración efectiva.
+`evaluation/corpus-compatibility.yaml` fija qué fingerprints son compatibles con qué gold sets;
+`benchmark.py compare` (`compare_reports`) rechaza comparar dos informes cuya tripleta
+corpus/fingerprint difiera, salvo que se declare `--rebaseline` explícitamente. Bajo esta misma
+política, una técnica de retrieval nueva sólo se adopta como valor por defecto si supera la baseline
+con evidencia reproducible sobre un gold set de validación no usado para ajustar (`RFC-001`, gate
+G2): `WRK-TASK-037` midió hybrid retrieval (BM25 + fusión por rango) y lo dejó implementado pero
+**no** por defecto (regresión en `recall_at_8` de validación); `WRK-TASK-038`/`ADR-RAG-012` midió
+reranking por cross-encoder y lo dejó disponible como capacidad opt-in
+(`RAG_DOCS_RERANKER_MODEL`) — mejora limpia y sin regresiones en validación, pero no forzada por
+defecto para no cambiar el comportamiento de un despliegue existente sin que el operador lo pida. El
+informe consolidado que compara los tres perfiles (`dense`, `hybrid`, reranking) sobre el mismo
+fingerprint vive en `evaluation/benchmarks/wrk-task-091/`.
+
 ## Evaluación
 
 Con API, Qdrant, Ollama e índice activos:

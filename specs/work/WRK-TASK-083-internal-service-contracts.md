@@ -3,11 +3,11 @@ id: WRK-TASK-083
 type: spec
 layer: work-task
 scope: ephemeral
-status: completed
+status: archived
 confidence: medium
 version: 0.1.0
 created: 2026-09-04
-updated: 2026-09-04
+updated: 2026-09-12
 owner: rag-docs-team
 parent: WRK-PLAN-012
 activates: [ARCH-002, DOM-RAG-002, DOC-RAG-002, RULE-003, RULE-004]
