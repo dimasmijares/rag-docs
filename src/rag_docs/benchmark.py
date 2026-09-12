@@ -39,6 +39,7 @@ from rag_docs.generation import (
     OllamaGenerator,
 )
 from rag_docs.indexing import IndexingService
+from rag_docs.lexical import FUSION_VERSION, LEXICAL_VERSION
 from rag_docs.query import QueryService
 from rag_docs.sources.local import LocalFolderSource
 from rag_docs.vector_store import QdrantVectorStore, VectorStore
@@ -222,6 +223,13 @@ class TimedStore:
         started = perf_counter()
         try:
             return self.wrapped.search(vector, limit, score_threshold, scope)
+        finally:
+            self.recorder.retrieval_ms += (perf_counter() - started) * 1000
+
+    def scan_chunks(self, scope):
+        started = perf_counter()
+        try:
+            return self.wrapped.scan_chunks(scope)
         finally:
             self.recorder.retrieval_ms += (perf_counter() - started) * 1000
 
@@ -409,9 +417,14 @@ def _aggregate_profile(profile: dict[str, Any], cases: list[dict[str, Any]]) -> 
     retrieval_input = [
         {"retrieval_metrics": item["retrieval_metrics"]} for item in cases
     ]
+    retrieval_strategy = profile.get("retrieval_strategy", "dense")
     return {
         "profile_id": profile["id"],
         "baseline_eligible": bool(profile.get("baseline_eligible")),
+        "retrieval_strategy": retrieval_strategy,
+        "retrieval_strategy_version": (
+            f"{LEXICAL_VERSION}+{FUSION_VERSION}" if retrieval_strategy == "hybrid" else "dense"
+        ),
         "effective_config": {
             key: profile[key]
             for key in (
@@ -497,6 +510,7 @@ def _build_services(
         "extractive_fallback"
         if profile["generator_mode"] == "forced_fallback"
         else "llm",
+        retrieval_strategy=profile.get("retrieval_strategy", "dense"),
     )
     return service, recorder, indexing_ms, fingerprint
 

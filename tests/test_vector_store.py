@@ -240,6 +240,26 @@ def test_update_acl_changes_payload_without_touching_the_vector(tmp_path: Path) 
     assert hits[0].chunk.tenant_id == "other-tenant"
 
 
+def test_scan_chunks_returns_full_chunks_respecting_scope(tmp_path: Path) -> None:
+    path = tmp_path / "doc.txt"
+    path.write_text("contenido", encoding="utf-8")
+    candidate = DocumentCandidate("demo", path, "doc.txt", path.as_uri(), "hash")
+    fingerprint = _fingerprint()
+    chunk = chunk_document(candidate, [ExtractedUnit("contenido lexico")], fingerprint=fingerprint)[
+        0
+    ]
+    store = QdrantVectorStore(":memory:", "test")
+    store.ensure_collection(3, fingerprint)
+    store.upsert([chunk], [[1.0, 0.0, 0.0]])
+
+    same_tenant = store.scan_chunks(SINGLE_TENANT_SCOPE)
+    other_tenant = store.scan_chunks(Scope(tenant="other-tenant"))
+
+    assert len(same_tenant) == 1
+    assert same_tenant[0].text == "contenido lexico"
+    assert other_tenant == []
+
+
 def test_chunk_default_acl_is_never_absent() -> None:
     chunk = chunk_document(
         DocumentCandidate("demo", Path("doc.txt"), "doc.txt", "file:///doc.txt", "hash"),

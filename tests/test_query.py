@@ -84,6 +84,30 @@ def test_query_uses_a_custom_authorizers_resolved_scope(tmp_path: Path) -> None:
     assert seen_scopes == [acme_scope]
 
 
+def test_hybrid_retrieval_merges_dense_and_lexical_hits(tmp_path: Path) -> None:
+    store = FakeVectorStore()
+    dense_only = make_hit(
+        tmp_path, score=0.9, text="Contenido genérico similar.", relative_path="dense.md"
+    )
+    lexical_only = make_hit(
+        tmp_path,
+        score=0.1,
+        text="ETL_CLIENTES_DIARIA aparece aquí literalmente.",
+        relative_path="lexical.md",
+    )
+    store.hits = [dense_only]
+    store.chunks["lexical-doc"] = [lexical_only.chunk]
+    generator = FakeGenerator("La respuesta usa ETL_CLIENTES_DIARIA [1].")
+    service = QueryService(
+        FakeEmbedder(), store, generator, retrieval_strategy="hybrid"
+    )
+
+    result = service.query("¿Qué es ETL_CLIENTES_DIARIA?")
+
+    retrieved_paths = {citation.relative_path for citation in result.citations}
+    assert "lexical.md" in retrieved_paths
+
+
 def test_query_without_hits_does_not_call_generator() -> None:
     store = FakeVectorStore()
     generator = FakeGenerator()
