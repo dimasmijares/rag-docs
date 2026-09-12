@@ -41,6 +41,7 @@ from rag_docs.generation import (
 from rag_docs.indexing import IndexingService
 from rag_docs.lexical import FUSION_VERSION, LEXICAL_VERSION
 from rag_docs.query import QueryService
+from rag_docs.reranking import RERANK_VERSION, CrossEncoderReranker
 from rag_docs.sources.local import LocalFolderSource
 from rag_docs.vector_store import QdrantVectorStore, VectorStore
 
@@ -155,6 +156,7 @@ def load_benchmark_config(path: Path) -> dict[str, Any]:
 class StageRecorder:
     embedding_ms: float = 0.0
     retrieval_ms: float = 0.0
+    rerank_ms: float = 0.0
     generation_ms: float = 0.0
     generation_calls: int = 0
 
@@ -232,6 +234,23 @@ class TimedStore:
             return self.wrapped.scan_chunks(scope)
         finally:
             self.recorder.retrieval_ms += (perf_counter() - started) * 1000
+
+
+class TimedReranker:
+    def __init__(self, wrapped, recorder: StageRecorder) -> None:
+        self.wrapped = wrapped
+        self.recorder = recorder
+
+    @property
+    def model_name(self) -> str:
+        return self.wrapped.model_name
+
+    def rerank(self, question, hits, top_n):
+        started = perf_counter()
+        try:
+            return self.wrapped.rerank(question, hits, top_n)
+        finally:
+            self.recorder.rerank_ms += (perf_counter() - started) * 1000
 
 
 class TimedGenerator:
@@ -399,7 +418,14 @@ def _public_case(result: dict[str, Any], stages: dict[str, Any]) -> dict[str, An
 
 
 def _stage_summary(cases: list[dict[str, Any]]) -> dict[str, Any]:
-    names = ("embedding_ms", "retrieval_ms", "grounding_ms", "generation_ms", "total_ms")
+    names = (
+        "embedding_ms",
+        "retrieval_ms",
+        "rerank_ms",
+        "grounding_ms",
+        "generation_ms",
+        "total_ms",
+    )
     summary: dict[str, Any] = {}
     for name in names:
         values = [float(item["stages"][name]) for item in cases]
@@ -418,6 +444,7 @@ def _aggregate_profile(profile: dict[str, Any], cases: list[dict[str, Any]]) -> 
         {"retrieval_metrics": item["retrieval_metrics"]} for item in cases
     ]
     retrieval_strategy = profile.get("retrieval_strategy", "dense")
+    reranker_model = profile.get("reranker_model")
     return {
         "profile_id": profile["id"],
         "baseline_eligible": bool(profile.get("baseline_eligible")),
@@ -425,6 +452,9 @@ def _aggregate_profile(profile: dict[str, Any], cases: list[dict[str, Any]]) -> 
         "retrieval_strategy_version": (
             f"{LEXICAL_VERSION}+{FUSION_VERSION}" if retrieval_strategy == "hybrid" else "dense"
         ),
+        "reranker_model": reranker_model,
+        "reranker_version": RERANK_VERSION if reranker_model else None,
+        "rerank_top_n": profile.get("rerank_top_n") if reranker_model else None,
         "effective_config": {
             key: profile[key]
             for key in (
@@ -511,6 +541,10 @@ def _build_services(
         if profile["generator_mode"] == "forced_fallback"
         else "llm",
         retrieval_strategy=profile.get("retrieval_strategy", "dense"),
+        reranker=TimedReranker(CrossEncoderReranker(str(profile["reranker_model"])), recorder)
+        if profile.get("reranker_model")
+        else None,
+        rerank_top_n=profile.get("rerank_top_n"),
     )
     return service, recorder, indexing_ms, fingerprint
 
@@ -534,6 +568,7 @@ def _run_profile(
     for index, case in enumerate(gold["cases"]):
         recorder.embedding_ms = 0.0
         recorder.retrieval_ms = 0.0
+        recorder.rerank_ms = 0.0
         recorder.generation_ms = 0.0
         recorder.generation_calls = 0
         started = perf_counter()
@@ -566,11 +601,17 @@ def _run_profile(
                     "api_error": f"runtime:{type(exc).__name__}",
                 }
         total_ms = (perf_counter() - started) * 1000
-        measured_ms = recorder.embedding_ms + recorder.retrieval_ms + recorder.generation_ms
+        measured_ms = (
+            recorder.embedding_ms
+            + recorder.retrieval_ms
+            + recorder.rerank_ms
+            + recorder.generation_ms
+        )
         stages = {
             "run_state": "cold" if index == 0 else "warm",
             "embedding_ms": round(recorder.embedding_ms, 2),
             "retrieval_ms": round(recorder.retrieval_ms, 2),
+            "rerank_ms": round(recorder.rerank_ms, 2),
             "grounding_ms": round(max(total_ms - measured_ms, 0.0), 2),
             "generation_ms": round(recorder.generation_ms, 2),
             "generation_calls": recorder.generation_calls,

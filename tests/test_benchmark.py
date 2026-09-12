@@ -76,9 +76,10 @@ def test_aggregate_profile_reports_stage_percentiles() -> None:
             "stages": {
                 "embedding_ms": value,
                 "retrieval_ms": value,
+                "rerank_ms": value,
                 "grounding_ms": value,
                 "generation_ms": value,
-                "total_ms": value * 4,
+                "total_ms": value * 5,
             },
         }
         for value in (1.0, 3.0)
@@ -88,7 +89,7 @@ def test_aggregate_profile_reports_stage_percentiles() -> None:
 
     assert result["score"] == 1.0
     assert result["performance"]["embedding"]["p50_ms"] == 2.0
-    assert result["performance"]["total"]["p95_ms"] == 11.6
+    assert result["performance"]["total"]["p95_ms"] == 14.5
 
 
 def test_lock_uses_only_eligible_development_profiles(tmp_path: Path) -> None:

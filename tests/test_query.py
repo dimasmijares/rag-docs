@@ -108,6 +108,35 @@ def test_hybrid_retrieval_merges_dense_and_lexical_hits(tmp_path: Path) -> None:
     assert "lexical.md" in retrieved_paths
 
 
+def test_reranker_reorders_hits_before_context_is_built(tmp_path: Path) -> None:
+    weak_dense = make_hit(
+        tmp_path, score=0.9, text="Texto general poco útil.", relative_path="weak.md"
+    )
+    strong_but_low_dense_score = make_hit(
+        tmp_path,
+        score=0.5,
+        text="ETL_CLIENTES_DIARIA es el proceso exacto preguntado.",
+        relative_path="strong.md",
+    )
+    store = FakeVectorStore()
+    store.hits = [weak_dense, strong_but_low_dense_score]
+    generator = FakeGenerator("La carga corresponde a ETL_CLIENTES_DIARIA [1].")
+
+    class ReverseReranker:
+        model_name = "fake-reranker"
+
+        def rerank(self, question, hits, top_n):
+            return list(reversed(hits))[:top_n]
+
+    service = QueryService(
+        FakeEmbedder(), store, generator, reranker=ReverseReranker(), rerank_top_n=2
+    )
+
+    result = service.query("¿Qué carga clientes?")
+
+    assert result.citations[0].relative_path == "strong.md"
+
+
 def test_query_without_hits_does_not_call_generator() -> None:
     store = FakeVectorStore()
     generator = FakeGenerator()
