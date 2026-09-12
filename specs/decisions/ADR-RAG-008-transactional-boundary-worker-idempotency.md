@@ -3,11 +3,11 @@ id: ADR-RAG-008
 type: adr
 layer: adr
 scope: persistent
-status: proposed
-confidence: medium
-version: 0.1.0
+status: accepted
+confidence: high
+version: 1.0.0
 created: 2026-09-04
-updated: 2026-09-04
+updated: 2026-09-12
 owner: rag-docs-team
 dependencies:
   - id: ADR-003
@@ -159,9 +159,12 @@ explícita:
    embeddings en el proceso de la API. Con worker separado, API y worker necesitan composiciones
    distintas: la API no debe cargar `sentence-transformers` y el worker no debe montar estáticos.
    Sin esta separación, cada réplica de API reserva memoria de modelo que no usa.
-6. `IndexReport` deja de ser el valor de retorno de `POST /api/index` y pasa a ser el resultado
-   final de un job. El contrato HTTP cambia de `200 IndexReport` a `202 JobResource`; es un breaking
-   change de la API pública y de la web estática.
+6. `IndexReport` pasa a ser también el resultado final de un job asíncrono, no sólo el valor de
+   retorno síncrono de `POST /api/index`. El endpoint gana un modo `202 JobResource`; por decisión
+   del Human Checkpoint (resuelto el 2026-09-12) el `200 IndexReport` síncrono se conserva como modo
+   degradado en lugar de eliminarse, así que deja de ser un breaking change de la API pública y de
+   la web estática de `v0.2.0` — es una ampliación aditiva del contrato, con el coste de mantener
+   ambas rutas en `api.py` y en la web.
 
 Positivas: resumibilidad, cancelación real, reejecución segura sin coordinación, y un modelo mental
 único (PostgreSQL manda, Qdrant se reconstruye) que sobrevive intacto a la extracción de servicios
@@ -191,11 +194,21 @@ Reordenar y ampliar:
 
 ## Human Checkpoint
 
-**PARAR y validar antes de `WRK-TASK-030`** dos puntos:
+**Resuelto el 2026-09-12.** El propietario decidió ambos puntos a favor de la opción que preserva
+lo ya publicado, antes de que `WRK-TASK-030` empezara a implementarse:
 
-1. La separación de la suite en unitaria e integración cambia el contrato de `scripts/verify.ps1`,
-   que hoy es la puerta única del repositorio y está documentado en `CLAUDE.md` y en CI. Conviene
-   decidir de antemano si el gate obligatorio pasa a exigir Docker.
-2. El cambio de `200 IndexReport` a `202 JobResource` rompe la API pública y la web de `v0.2.0`,
-   que es la release de portfolio ya publicada. Hay que decidir si `v1.0.0` mantiene el endpoint
-   síncrono como modo degradado para la demo pública o si la demo se actualiza a la vez.
+1. **`scripts/verify.ps1` sigue siendo el gate obligatorio sin infraestructura.** No pasa a exigir
+   Docker. La suite de integración con PostgreSQL real (`WRK-TASK-030` AC7) se separa como gate
+   adicional, explícitamente no obligatorio para cerrar una tarea que no toca persistencia — se
+   documenta y se ejecuta aparte (script propio o job de CI dedicado), preservando la promesa
+   actual de que ningún `WRK-TASK` fuera de `v1.0.0`/persistencia necesita infraestructura para
+   verificar. `WRK-TASK-030` debe declarar explícitamente en su Evidence cómo se invoca esa suite
+   de integración y dejar constancia en `README.md`/`CLAUDE.md` de que es un gate distinto, no una
+   ampliación del gate por defecto.
+2. **`v1.0.0` mantiene `200 IndexReport` síncrono como modo degradado.** `POST /api/index` conserva
+   la respuesta síncrona actual (aditiva, no removida) junto con el nuevo `202 JobResource`
+   asíncrono del worker — por ejemplo, activable por defecto para corpus pequeños o bajo un flag
+   explícito. La demo pública y la web estática de `v0.2.0` siguen funcionando sin cambios; el modo
+   asíncrono es la ruta nueva, no un reemplazo forzoso. `WRK-TASK-030`/`031`/`034` deben tratar el
+   contrato síncrono como superficie que se conserva, no como código muerto a eliminar, y el ADR de
+   `index-api`/`ARCH-002` que formalice el contrato HTTP definitivo debe declarar ambos modos.
