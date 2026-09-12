@@ -2,7 +2,10 @@
 
 PoC local de RAG documental para consultar PDF, DOCX, PPTX, XLSX, TXT y Markdown con respuestas grounded y fuentes localizables. El desarrollo está gobernado por KDD: conocimiento persistente, trabajo trazable y decisiones enlazadas en `specs/`.
 
-Release actual: **v0.2.0** — portfolio público reproducible sobre corpus y gold sets sintéticos.
+Release actual: **v0.3.0** — invariantes de índice reforzados (fingerprint con migración y
+rollback, ámbito de autorización obligatorio, ACL sin recalcular embeddings) y calidad de
+retrieval medida con evidencia reproducible (hybrid, reranking) sobre la baseline pública de
+`v0.2.0`.
 
 ## Arquitectura
 
