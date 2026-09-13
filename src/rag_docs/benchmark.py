@@ -23,10 +23,12 @@ from rag_docs.contracts import IndexFingerprint
 from rag_docs.embeddings import Embedder, SentenceTransformerEmbedder
 from rag_docs.evaluation import (
     DEFAULT_CORPUS_COMPATIBILITY,
+    REPORT_SCHEMA_VERSION,
     _percentile,
     aggregate_retrieval_metrics,
     evaluate_case,
     load_corpus_compatibility,
+    report_vector_backend,
     verify_fingerprint_compatibility,
     verify_gold_corpus_version,
 )
@@ -45,7 +47,13 @@ from rag_docs.reranking import RERANK_VERSION, CrossEncoderReranker
 from rag_docs.sources.local import LocalFolderSource
 from rag_docs.vector_store import QdrantVectorStore, VectorStore
 
+#: Schema of config/benchmark.yaml and the decision lock. Reports use
+#: ``REPORT_SCHEMA_VERSION`` (1.1 since WRK-TASK-098).
 SCHEMA_VERSION = "1.0"
+#: The benchmark indexes into Qdrant collections with their default HNSW index
+#: configuration (``_build_services``); declared per profile (ADR-RAG-013).
+BENCHMARK_VECTOR_BACKEND = "qdrant"
+BENCHMARK_VECTOR_SEARCH_MODE = "hnsw"
 DEFAULT_CONFIG = Path("config/benchmark.yaml")
 DEFAULT_DEV_REPORT = Path("evaluation/benchmarks/wrk-task-027/dev-results.json")
 DEFAULT_DECISION = Path("evaluation/benchmarks/wrk-task-027/decision-lock.json")
@@ -56,8 +64,9 @@ DEFAULT_VALIDATION_REPORT = Path(
 
 class RebaselineRequired(RuntimeError):
     """Raised by ``compare_reports`` when two reports do not share the same
-    ``corpus_version``/``IndexFingerprint`` triplet and no explicit
-    re-baseline was declared (``ADR-RAG-011``)."""
+    comparability key (``corpus_version``, ``IndexFingerprint`` digest,
+    ``vector_backend``, ``vector_search_mode``) and no explicit re-baseline was
+    declared (``ADR-RAG-011``, ``ADR-RAG-013``)."""
 
 
 def _fingerprint_payload(fingerprint: IndexFingerprint) -> dict[str, Any]:
@@ -447,6 +456,8 @@ def _aggregate_profile(profile: dict[str, Any], cases: list[dict[str, Any]]) -> 
     reranker_model = profile.get("reranker_model")
     return {
         "profile_id": profile["id"],
+        "vector_backend": BENCHMARK_VECTOR_BACKEND,
+        "vector_search_mode": BENCHMARK_VECTOR_SEARCH_MODE,
         "baseline_eligible": bool(profile.get("baseline_eligible")),
         "retrieval_strategy": retrieval_strategy,
         "retrieval_strategy_version": (
@@ -699,7 +710,7 @@ def execute_phase(
         for item in profiles
     ]
     report = {
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": REPORT_SCHEMA_VERSION,
         "benchmark_id": config["benchmark_id"],
         "phase": phase,
         "started_at": started,
@@ -871,10 +882,15 @@ def compare_reports(
     rebaseline: bool = False,
 ) -> dict[str, Any]:
     """Compares one profile across two benchmark reports (``ADR-RAG-011``,
-    ``WRK-TASK-086``). A ``corpus_version``/``IndexFingerprint`` triplet that
-    differs between the two means the runs are not directly comparable: the
-    delta cannot be presented as a regression or an improvement without an
-    explicit ``rebaseline=True`` declaration."""
+    ``WRK-TASK-086``, ``WRK-TASK-098``). The comparability key is
+    ``corpus_version``, ``IndexFingerprint`` digest, ``vector_backend`` and
+    ``vector_search_mode``; if any differs the runs are not directly
+    comparable and the delta cannot be presented as a regression or an
+    improvement without an explicit ``rebaseline=True`` declaration.
+
+    Recall stays comparable across backends or modes when corpus and
+    fingerprint match (that is what a backend comparison measures); latency is
+    comparable only under the full key, never across backends."""
 
     def _profile(report: dict[str, Any], path: Path) -> dict[str, Any]:
         match = next(
@@ -885,43 +901,65 @@ def compare_reports(
             raise ValueError(f"{path} no contiene el perfil {profile_id!r}")
         return match
 
+    def _key(report: dict[str, Any], profile: dict[str, Any]) -> tuple[Any, ...]:
+        return (
+            report.get("corpus_version"),
+            profile.get("index_fingerprint", {}).get("digest"),
+            *report_vector_backend(report, profile),
+        )
+
+    def _summary(key: tuple[Any, ...], profile: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "corpus_version": key[0],
+            "index_fingerprint": key[1],
+            "vector_backend": key[2],
+            "vector_search_mode": key[3],
+            "score": profile["score"],
+            "recall_at_8": profile.get("retrieval", {}).get("recall_at_8"),
+            "latency_p95_ms": profile.get("performance", {}).get("total", {}).get("p95_ms"),
+        }
+
+    def _delta(name: str, allowed: bool) -> float | None:
+        before, after = previous_summary[name], current_summary[name]
+        if not allowed or before is None or after is None:
+            return None
+        return after - before
+
     previous = _load_json(previous_path)
     current = _load_json(current_path)
     previous_profile = _profile(previous, previous_path)
     current_profile = _profile(current, current_path)
-    previous_triplet = (
-        previous.get("corpus_version"),
-        previous_profile.get("index_fingerprint", {}).get("digest"),
-    )
-    current_triplet = (
-        current.get("corpus_version"),
-        current_profile.get("index_fingerprint", {}).get("digest"),
-    )
-    comparable = previous_triplet == current_triplet
+    previous_key = _key(previous, previous_profile)
+    current_key = _key(current, current_profile)
+    comparable = previous_key == current_key
     if not comparable and not rebaseline:
         raise RebaselineRequired(
-            f"corpus_version/index_fingerprint difieren entre informes para {profile_id!r}: "
-            f"{previous_triplet} -> {current_triplet}. El delta no puede presentarse como "
-            "regresión ni como mejora sin una declaración explícita de re-baseline "
-            "(--rebaseline)."
+            "corpus_version/index_fingerprint/vector_backend/vector_search_mode difieren "
+            f"entre informes para {profile_id!r}: {previous_key} -> {current_key}. El delta "
+            "no puede presentarse como regresión ni como mejora sin una declaración "
+            "explícita de re-baseline (--rebaseline)."
         )
+    previous_summary = _summary(previous_key, previous_profile)
+    current_summary = _summary(current_key, current_profile)
+    recall_comparable = previous_key[:2] == current_key[:2]
     return {
         "profile_id": profile_id,
         "comparable": comparable,
         "rebaseline_declared": rebaseline,
-        "previous": {
-            "corpus_version": previous_triplet[0],
-            "index_fingerprint": previous_triplet[1],
-            "score": previous_profile["score"],
-        },
-        "current": {
-            "corpus_version": current_triplet[0],
-            "index_fingerprint": current_triplet[1],
-            "score": current_profile["score"],
-        },
-        "score_delta": (
-            current_profile["score"] - previous_profile["score"] if comparable else None
+        "recall_comparable": recall_comparable,
+        "latency_comparable": comparable,
+        "latency_note": None
+        if comparable
+        else (
+            "latencia no comparable entre backends distintos"
+            if previous_key[2] != current_key[2]
+            else "latencia no comparable fuera de la misma clave de comparabilidad"
         ),
+        "previous": previous_summary,
+        "current": current_summary,
+        "score_delta": _delta("score", comparable),
+        "recall_at_8_delta": _delta("recall_at_8", recall_comparable),
+        "latency_p95_delta_ms": _delta("latency_p95_ms", comparable),
     }
 
 
