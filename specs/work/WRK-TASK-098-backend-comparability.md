@@ -3,7 +3,7 @@ id: WRK-TASK-098
 type: spec
 layer: work-task
 scope: ephemeral
-status: completed
+status: archived
 confidence: medium
 version: 0.2.0
 created: 2026-09-13

@@ -3,9 +3,9 @@ id: WRK-TASK-104
 type: spec
 layer: work-task
 scope: ephemeral
-status: draft
-confidence: low
-version: 0.1.0
+status: completed
+confidence: high
+version: 1.0.0
 created: 2026-09-13
 updated: 2026-09-13
 owner: rag-docs-team
@@ -50,12 +50,32 @@ Incluye `README.md`, `specs/documentation/DOC-RAG-001-*`, `DOC-RAG-003-*`, `WRK-
 
 ## Acceptance Criteria
 
-- [ ] README y `DOC-RAG-001`/`DOC-RAG-003` documentan el perfil Fabric opcional y que el quickstart
+- [x] README y `DOC-RAG-001`/`DOC-RAG-003` documentan el perfil Fabric opcional y que el quickstart
       no lo necesita.
-- [ ] Criterios y Evidence de `WRK-SPEC-013` están completos.
-- [ ] Spec, plan y tareas quedan archivados conservando Evidence.
-- [ ] La versión del proyecto pasa a `0.4.0` y `scripts/verify.ps1` cierra en verde.
+- [x] Criterios y Evidence de `WRK-SPEC-013` están completos.
+- [x] Spec, plan y tareas quedan archivados conservando Evidence.
+- [x] La versión del proyecto pasa a `0.4.0` y `scripts/verify.ps1` cierra en verde.
 
 ## Evidence
 
-Pendiente.
+- **`README.md`:**
+  - release `v0.4.0`;
+  - campos aditivos de `GET /api/sources`;
+  - clave de comparabilidad con backend y modo, y verificación de fingerprint en `rag-docs-eval`;
+  - backends vectoriales tras puertos con suite de contrato;
+  - nueva sección "Perfil opcional Microsoft Fabric" con sus cuatro puntos de entrada, resultados
+    medidos y la advertencia de que el quickstart, la demo y `scripts/verify.ps1` no lo necesitan.
+- **`DOC-RAG-001` 1.5.0:** definición ampliada, nuevo criterio sobre el perfil opcional y Evidence
+  de esta tarea.
+- **`DOC-RAG-003` 1.0.0 (`active`):** declaración explícita de perfil opcional sin impacto en
+  quickstart, demo, verify ni CI, cobertura de `v0.4.0` y lo que queda para `v1.1.0` (worker de
+  inferencia y monitorización de capacidad, `WRK-PLAN-014`).
+- **Cierre KDD:**
+  - `WRK-SPEC-013` con los 8 criterios marcados y Evidence por criterio con enlaces a PRs, y
+    `WRK-PLAN-013` con tabla de estado final y Evidence del gate; ambos `archived`.
+  - `WRK-TASK-093` a `WRK-TASK-103` pasan de `completed` a `archived` sin tocar su Evidence.
+    `WRK-TASK-104` queda `completed`, igual que `WRK-TASK-091` en `v0.3.0`.
+  - `scripts/check-kdd-lifecycle.ps1` válido.
+- **Versión `0.4.0`:** `pyproject.toml`, `rag_docs.__version__`, OpenAPI (test
+  `test_openapi_declares_release_version`) y `uv.lock` regenerado con `uv lock`.
+- `scripts/verify.ps1` en verde y gate público superado.

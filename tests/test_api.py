@@ -110,8 +110,8 @@ def test_openapi_declares_release_version(tmp_path: Path) -> None:
     )
     client = TestClient(create_app(container))
 
-    assert __version__ == "0.3.0"
-    assert client.get("/openapi.json").json()["info"]["version"] == "0.3.0"
+    assert __version__ == "0.4.0"
+    assert client.get("/openapi.json").json()["info"]["version"] == "0.4.0"
 
 
 def test_generator_failure_is_an_explicit_service_error(tmp_path: Path) -> None:

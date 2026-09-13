@@ -2,10 +2,11 @@
 
 PoC local de RAG documental para consultar PDF, DOCX, PPTX, XLSX, TXT y Markdown con respuestas grounded y fuentes localizables. El desarrollo está gobernado por KDD: conocimiento persistente, trabajo trazable y decisiones enlazadas en `specs/`.
 
-Release actual: **v0.3.0** — invariantes de índice reforzados (fingerprint con migración y
-rollback, ámbito de autorización obligatorio, ACL sin recalcular embeddings) y calidad de
-retrieval medida con evidencia reproducible (hybrid, reranking) sobre la baseline pública de
-`v0.2.0`.
+Release actual: **v0.4.0** — backend vectorial neutral tras puertos (`VectorStorePort`,
+`IndexPublicationPort`) con una suite de contrato común, revisión de embeddings fijada para que
+aplicación y benchmark compartan fingerprint, comparabilidad por backend y un perfil **opcional**
+sobre Microsoft Fabric (vectores en SQL database, evaluación en Delta e informe Power BI). El
+quickstart local y `scripts/verify.ps1` siguen sin necesitar Fabric.
 
 ## Arquitectura
 
@@ -109,7 +110,9 @@ Coloca documentación autorizada en `examples/corporate/` o apunta a otra carpet
 
 ## API
 
-- `GET /api/sources`: configuración y disponibilidad de raíces.
+- `GET /api/sources`: configuración y disponibilidad de raíces. Desde `v0.4.0` añade
+  `index_fingerprint` (campos y `digest` del índice servido), `vector_backend` y
+  `vector_search_mode`; es un cambio aditivo y ningún campo previo cambia.
 - `POST /api/index`: sincronización incremental; acepta opcionalmente `{"source_ids": ["demo"]}`.
 - `POST /api/query`: `{"question": "¿Qué ETL carga clientes?"}`.
 
@@ -205,8 +208,12 @@ Qdrant); `VectorStore.update_acl` cambia esos campos sin recalcular embeddings n
 **Política de comparabilidad (`ADR-RAG-011`, `WRK-TASK-086`).** Todo informe de evaluación o
 benchmark declara `corpus_version`, `index_fingerprint` y la configuración efectiva.
 `evaluation/corpus-compatibility.yaml` fija qué fingerprints son compatibles con qué gold sets;
-`benchmark.py compare` (`compare_reports`) rechaza comparar dos informes cuya tripleta
-corpus/fingerprint difiera, salvo que se declare `--rebaseline` explícitamente. Bajo esta misma
+`benchmark.py compare` (`compare_reports`) rechaza comparar dos informes cuya clave
+`corpus_version` + fingerprint + `vector_backend` + `vector_search_mode` difiera, salvo que se
+declare `--rebaseline` explícitamente. Con mismo corpus y fingerprint el recall sigue siendo
+comparable entre backends, pero la latencia nunca. Desde `v0.4.0` los informes usan
+`schema_version` 1.1 y los 1.0 se leen como `qdrant`/`hnsw`. `rag-docs-eval` verifica el
+fingerprint vigente de la API contra ese manifiesto antes de puntuar. Bajo esta misma
 política, una técnica de retrieval nueva sólo se adopta como valor por defecto si supera la baseline
 con evidencia reproducible sobre un gold set de validación no usado para ajustar (`RFC-001`, gate
 G2): `WRK-TASK-037` midió hybrid retrieval (BM25 + fusión por rango) y lo dejó implementado pero
@@ -217,6 +224,32 @@ defecto para no cambiar el comportamiento de un despliegue existente sin que el 
 informe consolidado que compara los tres perfiles (`dense`, `hybrid`, reranking) sobre el mismo
 fingerprint vive en `evaluation/benchmarks/wrk-task-091/`.
 
+**Backends vectoriales (`ADR-RAG-013`).** El monolito solo consume `VectorStorePort` e
+`IndexPublicationPort`, y `RAG_DOCS_VECTOR_BACKEND` elige la implementación: `qdrant` por defecto
+o `fabric_sql` con el extra `[fabric]`. Cualquier backend debe superar la suite de contrato
+`tests/contract`, que corre contra Qdrant en memoria en `scripts/verify.ps1`.
+
+## Perfil opcional Microsoft Fabric (`v0.4.0`)
+
+Perfil **opcional** (`RFC-004`). El quickstart, la demo y `scripts/verify.ps1` no lo necesitan ni
+requieren credenciales. Requiere capacidad Fabric, un workspace dedicado y un service principal con
+certificado, cuyos identificadores viven fuera del repositorio. La guía completa de montaje,
+operación y desmontaje está en `specs/documentation/DOC-RAG-003-fabric-platform-operations.md`.
+
+| Paso | Comando | Qué hace |
+|---|---|---|
+| Bootstrap | `./fabric/bootstrap.ps1 -EnvFile <fabric.env>` | Workspace, Lakehouse, SQL database, Environment con el wheel, variable library y rol mínimo del service principal |
+| Gate Fabric | `./scripts/verify-fabric.ps1 -EnvFile <fabric.env> [-WalkingSkeleton]` | Suite de contrato contra `FabricSqlVectorStore`; con `-WalkingSkeleton`, publicación del índice local, drill de migración en SQL y `rag-docs-eval` sobre la API servida desde Fabric |
+| Evaluación en Delta | `./fabric/load_evaluation.ps1` | Carga append-only de gold sets, manifiesto e informes |
+| Informe | `./fabric/deploy_quality_report.ps1` | Modelo Direct Lake e informe Power BI (PBIP) de calidad por perfil, backend, corpus y fingerprint |
+
+Resultados medidos en `v0.4.0` sobre el corpus sintético:
+- Digest publicado en Fabric igual al local (`724f6786a9170f8b`).
+- `rag-docs-eval` 4/4 con citas desde Fabric SQL.
+- Paridad de recall exacta entre Qdrant y Fabric SQL en dev y validation
+  (`evaluation/benchmarks/wrk-task-102/`).
+- DiskANN evaluado como experimento G2 y no adoptado.
+
 ## Evaluación
 
 Con API, Qdrant, Ollama e índice activos:
@@ -226,7 +259,10 @@ uv run rag-docs-eval --gold evaluation/gold-set.yaml
 ```
 
 El informe se escribe en `logs/` y separa estado, retrieval, hechos, idioma y citas; también
-registra latencia por caso, p50/p95 y errores. No usa otro LLM como juez.
+registra latencia por caso, p50/p95 y errores. No usa otro LLM como juez. Antes de puntuar
+comprueba que el `index_fingerprint` de la API está declarado en
+`evaluation/corpus-compatibility.yaml` y falla explícitamente si no. El informe registra ese
+fingerprint y el `vector_backend`/`vector_search_mode` servido.
 
 `gold-set.yaml` es el smoke set compatible. Para desarrollo y validación separada están
 `gold-set.dev.yaml` (16 casos) y `gold-set.validation.yaml` (8 casos); ambos usan exclusivamente
