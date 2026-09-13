@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from rag_docs.config import Settings, SourceDefinition, load_sources
+from rag_docs.contracts import AppError, ErrorKind, VectorStorePort
 from rag_docs.embeddings import SentenceTransformerEmbedder
 from rag_docs.generator_profiles import GeneratorProfile, GeneratorProfileRegistry
 from rag_docs.indexing import IndexingService
@@ -8,6 +11,27 @@ from rag_docs.query import QueryService
 from rag_docs.reranking import CrossEncoderReranker
 from rag_docs.sources.local import LocalFolderSource
 from rag_docs.vector_store import QdrantVectorStore
+
+
+def _qdrant_store(settings: Settings) -> VectorStorePort:
+    return QdrantVectorStore(settings.qdrant_url, settings.qdrant_collection)
+
+
+#: One factory per ``Settings.vector_backend`` value (ADR-RAG-013). The rest of
+#: the container only sees ``VectorStorePort``.
+VECTOR_STORE_FACTORIES: dict[str, Callable[[Settings], VectorStorePort]] = {
+    "qdrant": _qdrant_store,
+}
+
+
+def build_vector_store(settings: Settings) -> VectorStorePort:
+    factory = VECTOR_STORE_FACTORIES.get(settings.vector_backend)
+    if factory is None:
+        raise AppError(
+            ErrorKind.VALIDATION,
+            f"Backend vectorial no soportado: '{settings.vector_backend}'.",
+        )
+    return factory(settings)
 
 
 class ApplicationContainer:
@@ -20,9 +44,7 @@ class ApplicationContainer:
         self.embedder = SentenceTransformerEmbedder(
             self.settings.embedding_model, self.settings.embedding_batch_size
         )
-        self.store = QdrantVectorStore(
-            self.settings.qdrant_url, self.settings.qdrant_collection
-        )
+        self.store = build_vector_store(self.settings)
         profiles = [
             GeneratorProfile(
                 id="local",

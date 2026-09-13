@@ -36,6 +36,7 @@ from rag_docs.contracts.ports import (
     GenerationPort,
     GroundingPort,
     GroundingVerdict,
+    IndexPublicationPort,
     RetrievalPort,
     VectorStorePort,
 )
@@ -74,6 +75,7 @@ __all__ = [
     "IdempotencyKey",
     "IndexError",
     "IndexFingerprint",
+    "IndexPublicationPort",
     "IndexReport",
     "IndexedDocument",
     "Locator",

@@ -11,13 +11,14 @@ from rag_docs.contracts import (
     ErrorKind,
     IndexError,
     IndexFingerprint,
+    IndexPublicationPort,
     IndexReport,
+    VectorStorePort,
 )
 from rag_docs.embeddings import Embedder
 from rag_docs.extractors import EXTRACTOR_VERSION, extract_document
 from rag_docs.models import DocumentCandidate
 from rag_docs.sources.base import DocumentSource
-from rag_docs.vector_store import QdrantVectorStore, VectorStore
 
 __all__ = [
     "IndexError",
@@ -72,7 +73,7 @@ class IndexingService:
         self,
         sources: list[DocumentSource],
         embedder: Embedder,
-        store: VectorStore,
+        store: VectorStorePort,
         chunk_tokens: int = 500,
         chunk_overlap: int = 75,
         acl_resolver: Callable[[DocumentCandidate], AclFields | None] = default_acl_resolver,
@@ -177,31 +178,30 @@ class IndexingService:
 
 def migrate_and_publish(
     live: IndexingService,
-    validate: Callable[[IndexReport, VectorStore], bool],
+    validate: Callable[[IndexReport, VectorStorePort], bool],
 ) -> str:
-    """Build the collection for ``live``'s active fingerprint out of band,
-    validate it, and only then move the alias.
+    """Build the index for ``live``'s active fingerprint out of band, validate
+    it, and only then move the alias.
 
     Nothing under ``live.store``'s logical name is touched until ``validate``
     returns ``True``: the candidate is populated through a store bound
-    directly to its own physical collection, invisible through the alias
-    (``QdrantVectorStore.for_physical_collection``). If ``validate`` -
-    typically a gold set run against the candidate - rejects it, the alias is
-    never moved and the candidate collection is left behind for inspection.
-    The previously published physical collection is never deleted here, so
-    ``QdrantVectorStore.rollback_alias`` can restore it during the window the
-    operator chooses to keep it.
+    directly to its own physical index, invisible through the alias
+    (``IndexPublicationPort.candidate_store``). If ``validate`` - typically a
+    gold set run against the candidate - rejects it, the alias is never moved
+    and the candidate index is left behind for inspection. The previously
+    published physical index is never deleted here, so
+    ``IndexPublicationPort.rollback_alias`` can restore it during the window
+    the operator chooses to keep it.
     """
-    if not isinstance(live.store, QdrantVectorStore):
+    publication = live.store
+    if not isinstance(publication, IndexPublicationPort):
         raise AppError(
             ErrorKind.VALIDATION,
-            "migrate_and_publish requiere un QdrantVectorStore.",
+            "migrate_and_publish requiere un store que implemente IndexPublicationPort.",
         )
     fingerprint = live.fingerprint
-    physical_name = live.store.physical_name_for(fingerprint)
-    candidate_store = QdrantVectorStore.for_physical_collection(
-        live.store.client, physical_name
-    )
+    physical_name = publication.physical_name_for(fingerprint)
+    candidate_store = publication.candidate_store(fingerprint)
     candidate_indexing = IndexingService(
         list(live.sources.values()),
         live.embedder,
@@ -221,5 +221,5 @@ def migrate_and_publish(
             f"El índice candidato '{physical_name}' no superó la validación; "
             "el alias no se movió.",
         )
-    live.store.publish_alias(physical_name)
+    publication.publish_alias(physical_name)
     return physical_name

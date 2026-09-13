@@ -22,6 +22,7 @@ from rag_docs.contracts import (
     IdempotencyKey,
     IndexError,
     IndexFingerprint,
+    IndexPublicationPort,
     IndexReport,
     QueryResult,
     RetrievalDiagnostic,
@@ -63,8 +64,28 @@ def test_ports_exist_as_protocols() -> None:
         GroundingPort,
         DocumentSourcePort,
         VectorStorePort,
+        IndexPublicationPort,
     ):
         assert getattr(port, "_is_protocol", False)
+
+
+def test_vector_store_port_is_the_single_store_protocol() -> None:
+    # ADR-RAG-013: the store protocol lives only in contracts; the legacy name
+    # in rag_docs.vector_store is an alias, not a second divergent protocol.
+    from rag_docs import vector_store
+
+    assert vector_store.VectorStore is VectorStorePort
+    for method in ("prune_document", "scan_chunks", "bind_fingerprint", "search", "upsert"):
+        assert hasattr(VectorStorePort, method)
+    for member in (
+        "logical_name",
+        "physical_name_for",
+        "published_physical_name",
+        "candidate_store",
+        "publish_alias",
+        "rollback_alias",
+    ):
+        assert hasattr(IndexPublicationPort, member)
 
 
 def test_value_objects_are_frozen() -> None:

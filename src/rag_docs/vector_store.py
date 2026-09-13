@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Iterable
-from typing import Protocol
 
 from rag_docs.contracts import (
     AclFields,
@@ -13,6 +12,7 @@ from rag_docs.contracts import (
     IndexFingerprint,
     Scope,
     SearchHit,
+    VectorStorePort,
     chunk_from_payload,
 )
 
@@ -20,27 +20,9 @@ from rag_docs.contracts import (
 # write, so the authorization prefilter never degrades to a full scan.
 ACL_PAYLOAD_INDEXES = ("tenant_id", "acl_subjects", "classification")
 
-
-class VectorStore(Protocol):
-    def ensure_collection(
-        self, vector_size: int, fingerprint: IndexFingerprint | None = None
-    ) -> None: ...
-
-    def list_documents(self, source_ids: set[str]) -> dict[str, IndexedDocument]: ...
-
-    def delete_document(self, document_id: str) -> None: ...
-
-    def prune_document(self, document_id: str, keep_chunk_ids: set[str]) -> None: ...
-
-    def upsert(self, chunks: list[DocumentChunk], vectors: list[list[float]]) -> None: ...
-
-    def search(
-        self, vector: list[float], limit: int, score_threshold: float | None, scope: Scope
-    ) -> list[SearchHit]: ...
-
-    def update_acl(self, document_id: str, acl: AclFields) -> None: ...
-
-    def scan_chunks(self, scope: Scope) -> list[DocumentChunk]: ...
+#: Backward-compatible alias: ``rag_docs.contracts.VectorStorePort`` is the only
+#: store protocol (``ADR-RAG-013``).
+VectorStore = VectorStorePort
 
 
 class QdrantVectorStore:
@@ -78,11 +60,23 @@ class QdrantVectorStore:
         store._direct_mode = True
         return store
 
+    @property
+    def logical_name(self) -> str:
+        return self.collection_name
+
     def physical_name_for(self, fingerprint: IndexFingerprint) -> str:
         """The physical collection name the alias would point to for
         ``fingerprint``. Public because migration orchestration needs it
         before the alias exists to point at it."""
         return self._physical_name(fingerprint)
+
+    def published_physical_name(self) -> str | None:
+        return self._resolve_alias()
+
+    def candidate_store(self, fingerprint: IndexFingerprint) -> QdrantVectorStore:
+        return QdrantVectorStore.for_physical_collection(
+            self.client, self.physical_name_for(fingerprint)
+        )
 
     def _physical_name(self, fingerprint: IndexFingerprint) -> str:
         if self._direct_mode:

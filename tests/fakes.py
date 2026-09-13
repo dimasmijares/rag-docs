@@ -42,6 +42,9 @@ class FakeVectorStore:
         self.vector_size = vector_size
         self.fingerprint = fingerprint
 
+    def bind_fingerprint(self, fingerprint: IndexFingerprint) -> None:
+        self.fingerprint = fingerprint
+
     def list_documents(self, source_ids: set[str]) -> dict[str, IndexedDocument]:
         return {
             key: value

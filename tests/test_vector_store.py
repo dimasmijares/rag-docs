@@ -10,6 +10,7 @@ from rag_docs.contracts import (
     AppError,
     ErrorKind,
     IndexFingerprint,
+    IndexPublicationPort,
     Scope,
 )
 from rag_docs.models import DocumentCandidate, ExtractedUnit
@@ -117,6 +118,25 @@ def test_publish_and_rollback_alias_keep_the_previous_collection_available() -> 
 
     store.rollback_alias(first_physical)
     assert store._resolve_alias() == first_physical
+
+
+def test_qdrant_adapter_implements_the_publication_port() -> None:
+    store = QdrantVectorStore(":memory:", "logical")
+    fingerprint = _fingerprint()
+
+    assert isinstance(store, IndexPublicationPort)
+    assert store.logical_name == "logical"
+    assert store.published_physical_name() is None
+
+    store.ensure_collection(3, fingerprint)
+    candidate = store.candidate_store(_fingerprint(chunk_tokens=600))
+    candidate.ensure_collection(3, _fingerprint(chunk_tokens=600))
+
+    # The alias still resolves to the published fingerprint; the candidate
+    # exists only as its own physical collection.
+    assert store.published_physical_name() == store.physical_name_for(fingerprint)
+    assert candidate.collection_name == store.physical_name_for(_fingerprint(chunk_tokens=600))
+    assert store.client.collection_exists(candidate.collection_name)
 
 
 def test_rollback_fails_explicitly_once_the_previous_collection_is_gone() -> None:
