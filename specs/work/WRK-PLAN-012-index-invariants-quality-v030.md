@@ -58,6 +58,7 @@ técnica de retrieval se adopta sin mejora medida sobre un baseline comparable.
 
 `093` (fingerprint expuesto en la API, ver el párrafo anterior) queda fuera de esta tabla: es
 trabajo descubierto que depende sólo de `086` y explícitamente no bloquea el cierre de `091`.
+Queda adoptada por `WRK-PLAN-013` (`v0.4.0`), que es su padre.
 
 ## Evidence
 

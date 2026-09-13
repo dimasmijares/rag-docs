@@ -4,9 +4,9 @@ type: rfc
 layer: rfc
 status: accepted
 confidence: medium
-version: 0.1.0
+version: 0.2.0
 created: 2026-09-01
-updated: 2026-09-01
+updated: 2026-09-13
 owner: rag-docs-team
 dependencies:
   - id: ARCH-001
@@ -48,3 +48,10 @@ PostgreSQL, Redis/Celery, Qdrant, Keycloak, OpenTelemetry y despliegue Compose o
 
 El recorrido añade infraestructura de forma progresiva y verificable. La separación física de
 servicios se pospone hasta que contratos, persistencia, seguridad y observabilidad estén probados.
+
+## Later Amendments
+
+La secuencia de siete releases quedó ampliada sin cambiar su destino: `ADR-RAG-007` introdujo
+`v0.3.0` (invariantes de índice y calidad) y `RFC-004` añade el perfil opcional de Microsoft Fabric
+en `v0.4.0` (backend neutral y evaluación) y `v1.1.0` (plano de indexación), con multimodal en
+`v1.2.0`. `RFC-004` extiende esta RFC y no altera el núcleo neutral respecto de cloud.

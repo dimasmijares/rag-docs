@@ -7,7 +7,7 @@ status: draft
 confidence: low
 version: 0.1.0
 created: 2026-09-01
-updated: 2026-09-01
+updated: 2026-09-13
 owner: rag-docs-team
 parent: WRK-SPEC-006
 activates: [ARCH-002, DOM-RAG-002, FEAT-RAG-002, DOC-RAG-002, RULE-001, RULE-002, RULE-004]
@@ -25,6 +25,9 @@ tags: [release-plan, v1.0.0, jobs, compose]
 `030` entra sólo con `v0.3.0` cerrada: depende de `WRK-TASK-091` y del modelo de tenant de
 `WRK-TASK-082`, de modo que el esquema nace multi-tenant. `084` fija el contrato de idempotencia
 que `031` implementa y del que `032` depende para reconciliar.
+
+Por `RFC-004`/`ADR-RAG-013`, `030` también depende de las costuras de store de `WRK-TASK-094`
+(`v0.4.0`): el ledger se modela tras `DocumentLedgerPort` con SQL portable.
 
 ## Gate
 

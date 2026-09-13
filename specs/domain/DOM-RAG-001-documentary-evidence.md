@@ -5,9 +5,9 @@ layer: domain
 scope: persistent
 status: active
 confidence: medium
-version: 1.1.0
+version: 1.2.0
 created: 2026-08-25
-updated: 2026-08-31
+updated: 2026-09-13
 owner: rag-docs-team
 dependencies:
   - id: RULE-001
@@ -32,7 +32,9 @@ Formalizar cuándo una respuesta puede considerarse respaldada y cómo localizar
   explícitamente y nunca introducen contenido ajeno a los fragmentos recuperados.
 - Toda cita conserva fuente, nombre, URI/ruta, ruta relativa y localizador disponible.
 - Si la evidencia no basta, la respuesta declara `insufficient_evidence` y no completa huecos con conocimiento general.
-- Los documentos, embeddings, consultas y contextos permanecen en el equipo durante la PoC.
+- Los documentos, embeddings, consultas y contextos permanecen en el equipo, salvo en backends
+  autorizados por `RFC-004` y configurados explícitamente, que sólo reciben el corpus sintético
+  público; el corpus corporativo nunca sale del equipo.
 
 ## Acceptance Criteria
 

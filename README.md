@@ -165,8 +165,10 @@ Puerta completa:
 
 Los specs viven en `specs/`. Las decisiones nuevas se registran como ADR; cambios transversales requieren RFC. Al cerrar un trabajo se actualizan evidencia, trazabilidad y confianza.
 
-El roadmap completo desde la PoC hasta los ocho servicios en Kubernetes está gobernado por
-`WRK-SPEC-004` y sus planes de release `WRK-PLAN-005` a `011`.
+El roadmap completo desde la PoC hasta la plataforma distribuida en Kubernetes está gobernado por
+`WRK-SPEC-004` y sus planes de release `WRK-PLAN-005` a `014`: `v0.4.0` y `v1.1.0` añaden un perfil
+opcional sobre Microsoft Fabric (`RFC-004`) que nunca es necesario para el quickstart ni para
+`scripts/verify.ps1`.
 
 ## Índice: fingerprint, ámbito y comparabilidad
 
