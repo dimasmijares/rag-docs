@@ -52,7 +52,7 @@ paridad de recall entre backends está medida; `scripts/verify.ps1` sigue sin re
 | 5 | WRK-TASK-096 | completed | 094 | Suite de contrato de VectorStore |
 | 6 | WRK-TASK-098 | completed | 094 | Comparabilidad por backend |
 | 7 | WRK-TASK-099 | completed | 097 | Bootstrap del workspace Fabric |
-| 8 | WRK-TASK-100 | draft | 094, 096, 099 | `FabricSqlVectorStore` |
+| 8 | WRK-TASK-100 | completed | 094, 096, 099 | `FabricSqlVectorStore` |
 | 9 | WRK-TASK-101 | draft | 095, 100 | Walking skeleton local → Fabric SQL |
 | 10 | WRK-TASK-102 | draft | 093, 098, 101 | Plano de evaluación en Delta |
 | 11 | WRK-TASK-103 | draft | 102 | Informe Power BI de calidad |

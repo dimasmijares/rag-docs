@@ -23,6 +23,7 @@ import httpx
 API = "https://api.fabric.microsoft.com/v1"
 SCOPE = "https://api.fabric.microsoft.com/.default"
 ENVIRONMENT_NAME = "ragdocs_env"
+SQL_DATABASE_NAME = "ragdocs_vectors"
 REQUIRED_ITEMS = {
     ("ragdocs_eval", "Lakehouse"),
     ("ragdocs_vectors", "SQLDatabase"),
@@ -39,6 +40,17 @@ def load_env_file(path: Path) -> dict[str, str]:
             key, value = line.split("=", 1)
             values[key.strip()] = value.strip()
     return values
+
+
+def write_env_values(path: Path, values: dict[str, str]) -> None:
+    """Replace or append ``KEY=value`` lines without printing the values."""
+    lines = [
+        line
+        for line in path.read_text(encoding="utf-8-sig").splitlines()
+        if line.split("=", 1)[0].strip() not in values
+    ]
+    lines.extend(f"{key}={value}" for key, value in values.items())
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def credential(config: dict[str, str], identity: str) -> Any:
@@ -78,6 +90,14 @@ class FabricClient:
             for item in self._get(f"/workspaces/{workspace_id}/items").get("value", [])
         }
 
+    def sql_connection(self) -> tuple[str, str]:
+        workspace_id = self.workspace_id()
+        database_id = self.items(workspace_id)[(SQL_DATABASE_NAME, "SQLDatabase")]
+        properties = self._get(f"/workspaces/{workspace_id}/sqlDatabases/{database_id}")[
+            "properties"
+        ]
+        return str(properties["serverFqdn"]), str(properties["databaseName"])
+
     def publish_wheel(self, wheel: Path, timeout_s: int) -> str:
         workspace_id = self.workspace_id()
         environment_id = self.items(workspace_id)[(ENVIRONMENT_NAME, "Environment")]
@@ -111,6 +131,11 @@ def main() -> int:
     commands = parser.add_subparsers(dest="command", required=True)
     check = commands.add_parser("check-access")
     check.add_argument("--as", dest="identity", choices=["user", "sp"], default="sp")
+    sql = commands.add_parser(
+        "sql-connection",
+        help="Escribe FABRIC_SQL_SERVER y FABRIC_SQL_DATABASE en el fichero de entorno.",
+    )
+    sql.add_argument("--as", dest="identity", choices=["user", "sp"], default="sp")
     publish = commands.add_parser("publish-wheel")
     publish.add_argument("wheel", type=Path)
     publish.add_argument("--as", dest="identity", choices=["user", "sp"], default="user")
@@ -124,6 +149,13 @@ def main() -> int:
         for name, kind in sorted(REQUIRED_ITEMS):
             print(f"{'ok' if (name, kind) not in missing else 'FALTA'}: {name}.{kind}")
         return 1 if missing else 0
+    if args.command == "sql-connection":
+        server, database = client.sql_connection()
+        write_env_values(
+            args.env_file, {"FABRIC_SQL_SERVER": server, "FABRIC_SQL_DATABASE": database}
+        )
+        print(f"Conexión SQL de {SQL_DATABASE_NAME} guardada en el fichero de entorno.")
+        return 0
     state = client.publish_wheel(args.wheel, args.timeout)
     print(f"Publicación del Environment {ENVIRONMENT_NAME}: {state}")
     return 0 if state == "success" else 1

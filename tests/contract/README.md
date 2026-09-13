@@ -23,6 +23,12 @@ uv run --no-sync pytest tests/contract -m live
 Remove-Item Env:RAG_DOCS_CONTRACT_LIVE_FACTORY
 ```
 
-Sin esa variable el parámetro `live` no existe, así que `scripts/verify.ps1` nunca lo ejecuta. El
-gate del perfil Fabric (`scripts/verify-fabric.ps1`, `WRK-TASK-100`) es quien lo usará con
-`FabricSqlVectorStore`.
+Sin esa variable el parámetro `live` no existe, así que `scripts/verify.ps1` nunca lo ejecuta.
+Tras cada test la fixture llama a `drop_logical_index()` si el store lo ofrece, de modo que un
+backend live no acumula índices.
+
+El gate del perfil Fabric lo usa con `FabricSqlVectorStore` (`WRK-TASK-100`):
+
+```powershell
+./scripts/verify-fabric.ps1 -EnvFile <ruta a fabric.env>
+```

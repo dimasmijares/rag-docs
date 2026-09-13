@@ -5,9 +5,9 @@ layer: rule
 scope: persistent
 status: active
 confidence: low
-version: 0.2.0
+version: 0.3.0
 created: 2026-09-01
-updated: 2026-09-01
+updated: 2026-09-13
 owner: rag-docs-team
 dependencies: []
 tags: [indexing, embeddings, migration, mandatory]
@@ -39,3 +39,12 @@ automática, colección versionada, validación previa y cambio atómico de alia
 - La migración (`indexing.migrate_and_publish`) sólo mueve el alias tras validar la colección
   candidata; el rollback (`rollback_alias`) dispone de la colección anterior hasta que
   `delete_physical` cierra la ventana explícitamente.
+- Mismo enforcement en todo backend de `VectorStorePort` + `IndexPublicationPort`
+  (`ADR-RAG-013`):
+  - Qdrant: colección física `<lógico>__<digest>` y alias de Qdrant.
+  - Fabric SQL: tablas físicas `<lógico>__<digest>__chunks`/`__acl` con dimensión fija,
+    catálogo `rag_index_physical` y alias en `rag_index_alias`, movido con un `MERGE`
+    transaccional (`FabricSqlVectorStore`, `WRK-TASK-100`).
+  - La suite de contrato (`tests/contract`) verifica en ambos la vinculación, el rechazo de
+    reutilización, el fallo con vínculo obsoleto, la publicación y el rollback; contra Fabric corre
+    en `scripts/verify-fabric.ps1`.

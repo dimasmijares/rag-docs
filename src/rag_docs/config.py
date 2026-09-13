@@ -43,8 +43,19 @@ class Settings(BaseSettings):
 
     sources_file: Path = Path("config/sources.yaml")
     #: Vector backend implementation selected by the container factory
-    #: (ADR-RAG-013). Only ``qdrant`` exists; new backends add a literal here.
-    vector_backend: Literal["qdrant"] = "qdrant"
+    #: (ADR-RAG-013). ``fabric_sql`` needs the optional ``[fabric]`` extra.
+    vector_backend: Literal["qdrant", "fabric_sql"] = "qdrant"
+    #: SQL database in Fabric (WRK-TASK-100). Server and database are environment
+    #: identifiers: set them in the local .env, never in versioned files.
+    fabric_sql_server: str | None = None
+    fabric_sql_database: str | None = None
+    fabric_sql_index: str = "rag_docs"
+    #: Microsoft Entra credential: ``default`` (DefaultAzureCredential), ``azure_cli``
+    #: or ``certificate`` (service principal; needs the three fields below).
+    fabric_sql_credential: Literal["default", "azure_cli", "certificate"] = "default"
+    fabric_tenant_id: str | None = None
+    fabric_client_id: str | None = None
+    fabric_client_cert_path: Path | None = None
     qdrant_url: str = "http://127.0.0.1:6333"
     qdrant_collection: str = "rag_docs"
     embedding_model: str = "intfloat/multilingual-e5-small"

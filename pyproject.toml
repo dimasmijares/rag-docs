@@ -33,6 +33,7 @@ dev = [
 # Perfil opcional Microsoft Fabric (RFC-004, WRK-TASK-099). scripts/verify.ps1 no lo requiere.
 fabric = [
   "azure-identity>=1.19,<2",
+  "mssql-python>=1.0,<2",
 ]
 
 [project.scripts]
