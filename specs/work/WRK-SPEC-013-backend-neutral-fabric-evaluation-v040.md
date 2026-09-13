@@ -3,7 +3,7 @@ id: WRK-SPEC-013
 type: spec
 layer: work-spec
 scope: ephemeral
-status: draft
+status: active
 confidence: medium
 version: 0.1.0
 created: 2026-09-13
