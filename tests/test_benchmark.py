@@ -13,6 +13,7 @@ from rag_docs.benchmark import (
     TimedGenerator,
     TimedStore,
     _aggregate_profile,
+    backend_parity,
     compare_reports,
     execute_validation,
     load_benchmark_config,
@@ -329,3 +330,72 @@ def test_compare_reports_reports_latency_delta_under_the_full_key(tmp_path: Path
 
     assert result["latency_p95_delta_ms"] == pytest.approx(20.0)
     assert result["latency_note"] is None
+
+
+def test_profiles_declare_their_backend_and_the_backend_search_mode() -> None:
+    config = load_benchmark_config(Path("config/benchmark-102-backends.yaml"))
+
+    declared = {
+        (item["id"], _aggregate_profile(item, [])["vector_backend"]) for item in config["profiles"]
+    }
+    modes = {_aggregate_profile(item, [])["vector_search_mode"] for item in config["profiles"]}
+
+    assert ("dense-qdrant", "qdrant") in declared
+    assert ("dense-fabric-sql", "fabric_sql") in declared
+    assert modes == {"hnsw", "exact"}
+
+
+def test_benchmark_config_rejects_an_unknown_vector_backend(tmp_path: Path) -> None:
+    import yaml
+
+    raw = yaml.safe_load(Path("config/benchmark-102-backends.yaml").read_text(encoding="utf-8"))
+    raw["profiles"][1]["vector_backend"] = "unknown"
+    path = tmp_path / "benchmark.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="vector_backend no soportado"):
+        load_benchmark_config(path)
+
+
+def _parity_profile(profile_id: str, backend: str, mode: str, recall: float, mrr: float) -> dict:
+    return {
+        "profile_id": profile_id,
+        "vector_backend": backend,
+        "vector_search_mode": mode,
+        "retrieval_strategy": "dense",
+        "reranker_model": None,
+        "rerank_top_n": None,
+        "effective_config": {"retrieval_top_k": 8},
+        "index_fingerprint": {"digest": "abc"},
+        "retrieval": {"recall_at_8": recall, "reciprocal_rank": mrr},
+        "performance": {"retrieval": {"p95_ms": 2.0 if backend == "qdrant" else 120.0}},
+        "cases": [{"id": "case-1", "retrieval_metrics": {"recall_at_8": recall}}],
+    }
+
+
+def test_backend_parity_pairs_profiles_that_differ_only_in_backend(tmp_path: Path) -> None:
+    report = {
+        "schema_version": REPORT_SCHEMA_VERSION,
+        "corpus_version": "0.2.0",
+        "profiles": [
+            _parity_profile("dense-qdrant", "qdrant", "hnsw", 1.0, 0.7),
+            _parity_profile("dense-fabric-sql", "fabric_sql", "exact", 1.0, 0.7),
+        ],
+    }
+    same = _write(tmp_path / "same.json", report)
+    report["profiles"][1] = _parity_profile("dense-fabric-sql", "fabric_sql", "exact", 0.5, 0.6)
+    different = _write(tmp_path / "different.json", report)
+
+    parity = backend_parity(same)
+    broken = backend_parity(different)
+
+    assert parity["recall_parity"] is True
+    pair = parity["pairs"][0]
+    assert (pair["reference_profile"], pair["candidate_profile"]) == (
+        "dense-qdrant",
+        "dense-fabric-sql",
+    )
+    assert pair["latency_comparable"] is False
+    assert broken["recall_parity"] is False
+    assert broken["pairs"][0]["recall_delta"]["recall_at_8"] == pytest.approx(-0.5)
+    assert broken["pairs"][0]["cases_with_different_retrieval"] == ["case-1"]

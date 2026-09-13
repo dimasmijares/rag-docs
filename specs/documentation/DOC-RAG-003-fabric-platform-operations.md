@@ -177,6 +177,53 @@ RAG_DOCS_FABRIC_SQL_CREDENTIAL=azure_cli
 - El índice se publica antes con `scripts/publish_index_to_fabric.py`; la API solo consulta. La
   búsqueda es exacta (`vector_search_mode: exact`), así que la latencia no se compara con Qdrant.
 
+## Plano de evaluación en Delta (WRK-TASK-102)
+
+### Carga
+
+```powershell
+./fabric/load_evaluation.ps1        # requiere fab con sesión; workspace rag-docs, lakehouse ragdocs_eval
+```
+
+1. Validación local de cada informe de `evaluation/benchmarks/**`: mismo `corpus_version` que
+   `evaluation/corpus-compatibility.yaml`, `corpus_manifest_sha256` igual al manifiesto del corpus
+   sintético y ningún campo `answer`/`snippet`/`text`/`claims`. Los informes que no cumplen se
+   excluyen con motivo; por ejemplo, los de `wrk-task-027` son anteriores a `corpus_version`.
+2. Aterrizaje con `fab cp` en `Files/landing/<corpus_version>/`: compatibilidad, manifiesto,
+   `gold-sets/` y `reports/`.
+3. `fab import` del notebook `ragdocs_eval_loader` desde `fabric/` y `fab job run` con
+   `corpus_version`. El notebook repite las salvaguardas y añade a Delta con `mode("append")`. Cada
+   fichero se registra por sha256 en `load_log` y uno ya cargado se omite, así que una recarga no
+   duplica ni reescribe nada. Nunca usa overwrite ni merge.
+
+El notebook resuelve el Lakehouse por nombre (variable library `ragdocs_params` y workspace
+actual). No lleva lakehouse por defecto ni IDs en su definición.
+
+### Tablas Delta (`ragdocs_eval.Lakehouse/Tables`)
+
+| Tabla | Grano | Columnas clave |
+|---|---|---|
+| `load_log` | fichero cargado | `source_sha256`, `kind`, `corpus_version`, `source_file`, `loaded_at` |
+| `corpus_manifest` | documento del corpus | `corpus_version`, `relative_path`, `sha256`, `manifest_sha256` |
+| `gold_cases` | caso de gold set | `corpus_version`, `gold_set`, `split`, `case_id`, `question`, `expected_status`, `expected_documents` |
+| `evaluation_runs` | informe | `run_id`, `corpus_version`, `benchmark_id`, `phase`, `report_schema_version`, `revision` |
+| `evaluation_profiles` | perfil por informe | `run_id`, `profile_id`, `vector_backend`, `vector_search_mode`, `retrieval_strategy`, `index_fingerprint_digest`, `score`, `recall_at_*`, `reciprocal_rank`, latencias p50/p95 |
+| `evaluation_cases` | caso por perfil | `run_id`, `profile_id`, `vector_backend`, `case_id`, flags de acierto, `recall_at_8`, `reciprocal_rank`, `retrieval_ms` |
+
+- Los informes `1.0` se cargan como `qdrant`/`hnsw`.
+- La latencia solo se compara dentro del mismo `vector_backend`.
+- El SQL analytics endpoint del Lakehouse tarda unos minutos en ver tablas nuevas.
+
+### Benchmark por backend
+
+- **Configuración:** `config/benchmark-102-backends.yaml`. Perfiles `dense` y `dense-reranked`
+  en `qdrant` y `fabric_sql`, con generador extractivo forzado para aislar el retrieval.
+- **Credenciales:** los perfiles Fabric necesitan `RAG_DOCS_FABRIC_*`, como en `verify-fabric.ps1`.
+  Cada perfil Fabric usa su propio índice lógico y lo elimina al terminar.
+- **Paridad:** `rag-docs-benchmark parity --report <informe>` empareja perfiles idénticos salvo
+  backend y calcula la paridad de recall. La latencia queda marcada como no comparable.
+- **Experimento DiskANN (G2):** `scripts/diskann_experiment.py`. No es el modo por defecto.
+
 ## Desmontaje
 
 Irreversible; lo ejecuta la persona operadora:

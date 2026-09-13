@@ -54,7 +54,7 @@ paridad de recall entre backends está medida; `scripts/verify.ps1` sigue sin re
 | 7 | WRK-TASK-099 | completed | 097 | Bootstrap del workspace Fabric |
 | 8 | WRK-TASK-100 | completed | 094, 096, 099 | `FabricSqlVectorStore` |
 | 9 | WRK-TASK-101 | completed | 095, 100 | Walking skeleton local → Fabric SQL |
-| 10 | WRK-TASK-102 | draft | 093, 098, 101 | Plano de evaluación en Delta |
+| 10 | WRK-TASK-102 | completed | 093, 098, 101 | Plano de evaluación en Delta |
 | 11 | WRK-TASK-103 | draft | 102 | Informe Power BI de calidad |
 | 12 | WRK-TASK-104 | draft | todas | Consolidación de `v0.4.0` |
 

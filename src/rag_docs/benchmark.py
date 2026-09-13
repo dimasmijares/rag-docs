@@ -19,6 +19,7 @@ import psutil
 import yaml
 
 from rag_docs.config import SourceDefinition, load_sources
+from rag_docs.container import VECTOR_SEARCH_MODES
 from rag_docs.contracts import IndexFingerprint
 from rag_docs.embeddings import Embedder, SentenceTransformerEmbedder
 from rag_docs.evaluation import (
@@ -50,10 +51,10 @@ from rag_docs.vector_store import QdrantVectorStore, VectorStore
 #: Schema of config/benchmark.yaml and the decision lock. Reports use
 #: ``REPORT_SCHEMA_VERSION`` (1.1 since WRK-TASK-098).
 SCHEMA_VERSION = "1.0"
-#: The benchmark indexes into Qdrant collections with their default HNSW index
-#: configuration (``_build_services``); declared per profile (ADR-RAG-013).
+#: Default backend of a profile: an in-memory Qdrant collection with its default HNSW index
+#: configuration. A profile may declare ``vector_backend: fabric_sql`` (WRK-TASK-102); its
+#: search mode is then the backend's (``container.VECTOR_SEARCH_MODES``).
 BENCHMARK_VECTOR_BACKEND = "qdrant"
-BENCHMARK_VECTOR_SEARCH_MODE = "hnsw"
 DEFAULT_CONFIG = Path("config/benchmark.yaml")
 DEFAULT_DEV_REPORT = Path("evaluation/benchmarks/wrk-task-027/dev-results.json")
 DEFAULT_DECISION = Path("evaluation/benchmarks/wrk-task-027/decision-lock.json")
@@ -158,7 +159,28 @@ def load_benchmark_config(path: Path) -> dict[str, Any]:
         raise ValueError(f"generator_mode no soportado: {sorted(modes)}")
     if not any(bool(item.get("baseline_eligible")) for item in profiles):
         raise ValueError("Debe existir al menos un perfil elegible como baseline")
+    backends = {_profile_backend(item) for item in profiles}
+    if not backends.issubset(VECTOR_SEARCH_MODES):
+        raise ValueError(f"vector_backend no soportado: {sorted(backends)}")
     return raw
+
+
+def _profile_backend(profile: dict[str, Any]) -> str:
+    return str(profile.get("vector_backend", BENCHMARK_VECTOR_BACKEND))
+
+
+def _benchmark_store(profile: dict[str, Any]) -> Any:
+    """Empty store for one profile. Fabric SQL profiles use a logical index of their own that is
+    dropped before indexing, so a rerun never measures leftovers (WRK-TASK-102)."""
+    logical_name = f"benchmark_{profile['id']}".replace("-", "_")
+    if _profile_backend(profile) == "qdrant":
+        return QdrantVectorStore(":memory:", logical_name)
+    from rag_docs.config import Settings
+    from rag_docs.fabric_sql_store import build_fabric_sql_store
+
+    store = build_fabric_sql_store(Settings(), logical_name)
+    store.drop_logical_index()
+    return store
 
 
 @dataclass(slots=True)
@@ -456,8 +478,8 @@ def _aggregate_profile(profile: dict[str, Any], cases: list[dict[str, Any]]) -> 
     reranker_model = profile.get("reranker_model")
     return {
         "profile_id": profile["id"],
-        "vector_backend": BENCHMARK_VECTOR_BACKEND,
-        "vector_search_mode": BENCHMARK_VECTOR_SEARCH_MODE,
+        "vector_backend": _profile_backend(profile),
+        "vector_search_mode": VECTOR_SEARCH_MODES[_profile_backend(profile)],
         "baseline_eligible": bool(profile.get("baseline_eligible")),
         "retrieval_strategy": retrieval_strategy,
         "retrieval_strategy_version": (
@@ -516,7 +538,7 @@ def _build_services(
     ollama_url: str,
 ) -> tuple[QueryService, StageRecorder, float, IndexFingerprint]:
     index_embedder = profile_embedder(profile, config)
-    store = QdrantVectorStore(":memory:", f"benchmark_{profile['id']}")
+    store = _benchmark_store(profile)
     sources = [LocalFolderSource(item) for item in source_definitions]
     started = perf_counter()
     indexing_service = IndexingService(
@@ -641,6 +663,10 @@ def _run_profile(
         if profile["generator_mode"] == "ollama"
         else {"resident_mb": 0.0, "vram_mb": 0.0}
     )
+    # A live backend keeps state: drop the profile's logical index once measured.
+    cleanup = getattr(getattr(service.store, "wrapped", None), "drop_logical_index", None)
+    if callable(cleanup):
+        cleanup()
     return aggregated
 
 
@@ -963,6 +989,91 @@ def compare_reports(
     }
 
 
+PARITY_METRICS = (
+    "recall_at_1",
+    "recall_at_3",
+    "recall_at_5",
+    "recall_at_8",
+    "reciprocal_rank",
+)
+
+
+def backend_parity(report_path: Path, *, tolerance: float = 1e-9) -> dict[str, Any]:
+    """Recall parity between profiles of one report that are identical except for
+    ``vector_backend`` (``WRK-TASK-102``, ``ADR-RAG-013``). Same corpus and fingerprint make
+    recall comparable across backends; latency never is, so it is reported per backend only."""
+    report = _load_json(report_path)
+
+    def pairing_key(profile: dict[str, Any]) -> str:
+        return json.dumps(
+            {
+                "retrieval_strategy": profile.get("retrieval_strategy"),
+                "reranker_model": profile.get("reranker_model"),
+                "rerank_top_n": profile.get("rerank_top_n"),
+                "effective_config": profile.get("effective_config"),
+                "fingerprint": profile.get("index_fingerprint", {}).get("digest"),
+            },
+            sort_keys=True,
+        )
+
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for profile in report.get("profiles", []):
+        groups.setdefault(pairing_key(profile), []).append(profile)
+    pairs = []
+    for members in groups.values():
+        by_backend = {report_vector_backend(report, item)[0]: item for item in members}
+        if len(by_backend) < 2 or "qdrant" not in by_backend:
+            continue
+        reference = by_backend["qdrant"]
+        reference_cases = {case["id"]: case["retrieval_metrics"] for case in reference["cases"]}
+        for backend, candidate in sorted(by_backend.items()):
+            if backend == "qdrant":
+                continue
+            deltas = {
+                name: (
+                    None
+                    if reference["retrieval"].get(name) is None
+                    or candidate["retrieval"].get(name) is None
+                    else round(candidate["retrieval"][name] - reference["retrieval"][name], 6)
+                )
+                for name in PARITY_METRICS
+            }
+            differing_cases = sorted(
+                case["id"]
+                for case in candidate["cases"]
+                if case["retrieval_metrics"] != reference_cases.get(case["id"])
+            )
+            pairs.append(
+                {
+                    "reference_profile": reference["profile_id"],
+                    "candidate_profile": candidate["profile_id"],
+                    "reference_backend": "qdrant",
+                    "reference_search_mode": report_vector_backend(report, reference)[1],
+                    "candidate_backend": backend,
+                    "candidate_search_mode": report_vector_backend(report, candidate)[1],
+                    "index_fingerprint": reference["index_fingerprint"]["digest"],
+                    "recall_reference": {n: reference["retrieval"].get(n) for n in PARITY_METRICS},
+                    "recall_candidate": {n: candidate["retrieval"].get(n) for n in PARITY_METRICS},
+                    "recall_delta": deltas,
+                    "cases_with_different_retrieval": differing_cases,
+                    "recall_parity": not differing_cases
+                    and all(delta is None or abs(delta) <= tolerance for delta in deltas.values()),
+                    "latency_comparable": False,
+                    "latency_p95_ms_by_backend": {
+                        "qdrant": reference["performance"]["retrieval"]["p95_ms"],
+                        backend: candidate["performance"]["retrieval"]["p95_ms"],
+                    },
+                }
+            )
+    return {
+        "benchmark_id": report.get("benchmark_id"),
+        "phase": report.get("phase"),
+        "corpus_version": report.get("corpus_version"),
+        "pairs": pairs,
+        "recall_parity": bool(pairs) and all(pair["recall_parity"] for pair in pairs),
+    }
+
+
 def run() -> None:
     parser = argparse.ArgumentParser(description="Benchmark local reproducible de rag-docs")
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
@@ -984,8 +1095,12 @@ def run() -> None:
     compare.add_argument("--current", type=Path, required=True)
     compare.add_argument("--profile-id", required=True)
     compare.add_argument("--rebaseline", action="store_true")
+    parity = subparsers.add_parser("parity")
+    parity.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()
-    if args.command == "development":
+    if args.command == "parity":
+        result = backend_parity(args.report)
+    elif args.command == "development":
         result = execute_phase(args.config, "development", args.output)
     elif args.command == "lock":
         result = select_baseline(args.config, args.development, args.output)
