@@ -71,6 +71,10 @@ y el workflow de CI si cambia la invocación. Excluye crear artefactos Fabric re
   `config/public-safety-identifiers.local.txt`; la carga externa de identificadores no cambia.
 - Compatibilidad: `System.IO.Path.GetRelativePath` (sólo .NET Core) se sustituye por un cálculo de
   ruta relativa, de modo que el test corre también en Windows PowerShell 5.1 además de `pwsh` en CI.
+- Defecto previo corregido, detectado por la fixture `.platform` en CI (`pwsh` en Linux): el gate
+  usaba `Get-Item` sin `-Force`, así que en Linux los ficheros con punto inicial (`.platform`,
+  `.gitignore`, `.dockerignore`, `.env.example`) se omitían en silencio del escaneo de contenido.
+  Ahora se leen con `-Force`.
 - El workflow de CI no cambia: ya invoca ambos scripts en el job `public-safety`.
 - Verificado localmente: `scripts/check-public-safety.ps1` supera los 289 archivos candidatos del
   repositorio sin falsos positivos; `scripts/test-public-safety.ps1` supera todas las

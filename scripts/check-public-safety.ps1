@@ -149,7 +149,8 @@ try {
         if ($path.Replace('\', '/') -eq 'scripts/check-public-safety.ps1') {
             continue
         }
-        $item = Get-Item -LiteralPath $path -ErrorAction SilentlyContinue
+        # -Force: en Linux los ficheros con punto inicial (.platform, .gitignore) son ocultos.
+        $item = Get-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue
         if ($null -eq $item -or $item.PSIsContainer) {
             continue
         }
