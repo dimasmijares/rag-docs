@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rag-docs"
-version = "0.3.0"
+version = "0.4.0"
 description = "PoC local de RAG documental gobernada con KDD"
 readme = "README.md"
 license = "Apache-2.0"

@@ -3,9 +3,9 @@ id: DOC-RAG-003
 type: spec
 layer: documentation
 scope: persistent
-status: draft
+status: active
 confidence: medium
-version: 0.2.0
+version: 1.0.0
 created: 2026-09-13
 updated: 2026-09-13
 owner: rag-docs-team
@@ -29,6 +29,21 @@ tags: [documentation, fabric, operations, security, cost]
 
 Mantener una guía verificable para montar, operar y desmontar el perfil opcional de Fabric sin
 exponer secretos ni identificadores del entorno.
+
+**El perfil es opcional.** El quickstart local, `scripts/demo.ps1` y `scripts/verify.ps1` (y por
+tanto CI) no requieren Fabric, credenciales ni el extra `[fabric]`. Todo lo descrito aquí se ejecuta
+a demanda del operador.
+
+Cobertura en `v0.4.0`:
+- bootstrap, identidad y mínimo privilegio;
+- backend vectorial Fabric SQL y su gate;
+- walking skeleton;
+- plano de evaluación en Delta;
+- informe Power BI;
+- desmontaje.
+
+El worker de inferencia local (`ADR-RAG-014`) y la monitorización de consumo de capacidad se
+documentan con `v1.1.0` (`WRK-PLAN-014`).
 
 ## Definition
 
