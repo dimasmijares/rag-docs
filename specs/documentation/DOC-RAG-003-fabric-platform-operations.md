@@ -131,6 +131,52 @@ nunca por ID.
 - `scripts/check-public-safety.ps1` supera `fabric/` (`WRK-TASK-097`).
 - `scripts/verify.ps1` sigue en verde sin el extra `[fabric]` ni credenciales.
 
+## Backend vectorial y walking skeleton (WRK-TASK-100/101)
+
+### Gate Fabric
+
+```powershell
+./scripts/verify-fabric.ps1 -EnvFile <ruta a fabric.env>                    # contrato
+./scripts/verify-fabric.ps1 -EnvFile <ruta a fabric.env> -WalkingSkeleton   # recorrido completo
+```
+
+- Lo ejecuta la persona operadora con su `fabric.env`; nunca `scripts/verify.ps1` ni CI.
+- Resuelve servidor y base de datos de `ragdocs_vectors` por REST y los guarda en `fabric.env`
+  (`FABRIC_SQL_SERVER`, `FABRIC_SQL_DATABASE`) sin imprimirlos. Autentica como service principal
+  con certificado y restaura las variables de entorno al terminar.
+- Contrato: `tests/contract -m live` contra `FabricSqlVectorStore`, limpiando cada índice creado.
+- `-WalkingSkeleton`:
+  1. `scripts/publish_index_to_fabric.py` indexa el corpus sintético en local con el embedder
+     fijado, copia chunks y vectores a un candidato en Fabric SQL del mismo fingerprint y lo valida
+     (mismos chunks, mismos top hits, score ±1e-4). Solo entonces publica el alias y comprueba que
+     el digest publicado es el local.
+  2. `scripts/migration_drill.py --backend fabric_sql` migra a otro chunking, verifica que una
+     vinculación obsoleta rechaza la consulta y hace rollback. Empieza y termina con el índice
+     `migration_drill` limpio.
+  3. Arranca la API local con `RAG_DOCS_VECTOR_BACKEND=fabric_sql` y exige que
+     `GET /api/sources` declare `vector_backend: fabric_sql`. Después ejecuta `rag-docs-eval` con
+     Ollama sobre el smoke gold set, que verifica la compatibilidad del fingerprint antes de
+     puntuar.
+
+  Los logs quedan en `_build/verify-fabric/`, ignorado por Git.
+
+### API local servida desde Fabric
+
+En el `.env` local (nunca versionado):
+
+```text
+RAG_DOCS_VECTOR_BACKEND=fabric_sql
+RAG_DOCS_FABRIC_SQL_SERVER=<servidor>
+RAG_DOCS_FABRIC_SQL_DATABASE=<base de datos>
+RAG_DOCS_FABRIC_SQL_CREDENTIAL=azure_cli
+```
+
+- `azure_cli` usa la sesión de `az login` de la persona. `certificate` usa el service principal
+  (`RAG_DOCS_FABRIC_TENANT_ID`, `RAG_DOCS_FABRIC_CLIENT_ID`, `RAG_DOCS_FABRIC_CLIENT_CERT_PATH`).
+- Hay que instalar el extra con `uv sync --extra fabric`.
+- El índice se publica antes con `scripts/publish_index_to_fabric.py`; la API solo consulta. La
+  búsqueda es exacta (`vector_search_mode: exact`), así que la latencia no se compara con Qdrant.
+
 ## Desmontaje
 
 Irreversible; lo ejecuta la persona operadora:
