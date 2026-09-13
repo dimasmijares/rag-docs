@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Literal
 
@@ -50,10 +51,19 @@ def create_app(container: ApplicationContainer | Any | None = None) -> FastAPI:
     def index_page() -> FileResponse:
         return FileResponse(static_dir / "index.html")
 
-    @app.get("/api/sources")
+    @app.get(
+        "/api/sources",
+        description=(
+            "Configuración y disponibilidad de raíces. Desde 0.4.0 incluye además "
+            "`index_fingerprint`: los campos del `IndexFingerprint` vigente y su "
+            "`digest` (WRK-TASK-093). Cambio aditivo: ningún campo previo cambia."
+        ),
+    )
     def get_sources() -> dict[str, Any]:
         definitions = app.state.container.source_definitions
+        fingerprint = app.state.container.indexing.fingerprint
         return {
+            "index_fingerprint": {**asdict(fingerprint), "digest": fingerprint.digest()},
             "sources": [
                 {
                     "id": source.id,
