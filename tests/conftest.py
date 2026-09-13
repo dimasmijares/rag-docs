@@ -51,7 +51,12 @@ def contract_store(request: pytest.FixtureRequest) -> Any:
     factory = request.param
     if isinstance(factory, str):
         factory = _load_live_factory(factory)
-    return factory(f"contract_{uuid.uuid4().hex[:12]}")
+    store = factory(f"contract_{uuid.uuid4().hex[:12]}")
+    yield store
+    # A live backend keeps state between runs: drop what this test created.
+    cleanup = getattr(store, "drop_logical_index", None)
+    if callable(cleanup):
+        cleanup()
 
 
 @pytest.fixture

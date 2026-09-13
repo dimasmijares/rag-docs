@@ -5,9 +5,9 @@ layer: rule
 scope: persistent
 status: active
 confidence: low
-version: 0.2.0
+version: 0.3.0
 created: 2026-09-01
-updated: 2026-09-01
+updated: 2026-09-13
 owner: rag-docs-team
 dependencies:
   - id: RULE-001
@@ -35,7 +35,14 @@ desarrollo— debe recibir un principal y un ámbito válido o fallar antes del 
 
 ## Enforcement
 
-- Filtro obligatorio de tenant y ACL en la consulta al índice.
+- Filtro obligatorio de tenant y ACL en la consulta al índice, en todo backend de
+  `VectorStorePort` (`ADR-RAG-013`):
+  - Qdrant: filtro de payload `tenant_id`/`acl_subjects`/`classification` con índices `KEYWORD`
+    en la misma llamada de búsqueda (`QdrantVectorStore._scope_filter`).
+  - Fabric SQL: `WHERE` sobre `tenant_id` y `classification` y `EXISTS` sobre la tabla hija de
+    subjects, aplicado antes de `TOP k`; un ámbito sin subjects o clasificaciones devuelve vacío
+    sin consultar (`FabricSqlVectorStore.search`/`scan_chunks`, `WRK-TASK-100`).
+  - La suite de contrato (`tests/contract`) exige ese prefiltro a ambos backends.
 - Pruebas multiusuario, multitenant y de fallos de autorización.
 - Los servicios validan tokens recibidos y aplican mínimo privilegio.
 - Logs y métricas no convierten una denegación en canal lateral.

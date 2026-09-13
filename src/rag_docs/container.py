@@ -25,10 +25,18 @@ def _qdrant_store(settings: Settings) -> VectorStorePort:
     return QdrantVectorStore(settings.qdrant_url, settings.qdrant_collection)
 
 
+def _fabric_sql_store(settings: Settings) -> VectorStorePort:
+    # Imported lazily: the Fabric backend is optional (WRK-TASK-100).
+    from rag_docs.fabric_sql_store import build_fabric_sql_store
+
+    return build_fabric_sql_store(settings)
+
+
 #: One factory per ``Settings.vector_backend`` value (ADR-RAG-013). The rest of
 #: the container only sees ``VectorStorePort``.
 VECTOR_STORE_FACTORIES: dict[str, Callable[[Settings], VectorStorePort]] = {
     "qdrant": _qdrant_store,
+    "fabric_sql": _fabric_sql_store,
 }
 
 
