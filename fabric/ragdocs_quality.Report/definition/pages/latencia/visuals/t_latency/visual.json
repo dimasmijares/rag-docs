@@ -1,0 +1,144 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "t_latency",
+  "position": {
+    "x": 20,
+    "y": 480,
+    "z": 0,
+    "width": 1240,
+    "height": 220
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "evaluation_profiles"
+                    }
+                  },
+                  "Property": "vector_backend"
+                }
+              },
+              "queryRef": "evaluation_profiles.vector_backend",
+              "nativeQueryRef": "vector_backend"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "evaluation_profiles"
+                    }
+                  },
+                  "Property": "vector_search_mode"
+                }
+              },
+              "queryRef": "evaluation_profiles.vector_search_mode",
+              "nativeQueryRef": "vector_search_mode"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "evaluation_profiles"
+                    }
+                  },
+                  "Property": "profile_id"
+                }
+              },
+              "queryRef": "evaluation_profiles.profile_id",
+              "nativeQueryRef": "profile_id"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "evaluation_profiles"
+                    }
+                  },
+                  "Property": "Retrieval p50 (ms)"
+                }
+              },
+              "queryRef": "evaluation_profiles.Retrieval p50 (ms)",
+              "nativeQueryRef": "Retrieval p50 (ms)"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "evaluation_profiles"
+                    }
+                  },
+                  "Property": "Retrieval p95 (ms)"
+                }
+              },
+              "queryRef": "evaluation_profiles.Retrieval p95 (ms)",
+              "nativeQueryRef": "Retrieval p95 (ms)"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "evaluation_profiles"
+                    }
+                  },
+                  "Property": "Perfiles"
+                }
+              },
+              "queryRef": "evaluation_profiles.Perfiles",
+              "nativeQueryRef": "Perfiles"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Latencia de retrieval por backend y perfil'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}
