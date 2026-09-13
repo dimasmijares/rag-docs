@@ -1,10 +1,18 @@
+from pathlib import Path
+
 import pytest
+import yaml
 from pydantic import ValidationError
 
+from rag_docs.benchmark import profile_embedder
 from rag_docs.config import Settings
-from rag_docs.container import build_vector_store
+from rag_docs.container import build_embedder, build_vector_store
 from rag_docs.contracts import AppError, ErrorKind, IndexPublicationPort
+from rag_docs.embeddings import SentenceTransformerEmbedder
+from rag_docs.indexing import build_fingerprint
 from rag_docs.vector_store import QdrantVectorStore
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_vector_backend_defaults_to_qdrant() -> None:
@@ -31,3 +39,43 @@ def test_factory_fails_explicitly_for_a_backend_without_implementation() -> None
         build_vector_store(settings)
 
     assert excinfo.value.kind is ErrorKind.VALIDATION
+
+
+def test_embedding_revision_setting_propagates_to_the_app_embedder() -> None:
+    embedder = build_embedder(Settings(_env_file=None, embedding_revision="pinned-rev"))
+
+    assert embedder.revision == "pinned-rev"
+
+
+def test_app_and_benchmark_build_the_same_fingerprint_digest(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Avoid loading the model: only the declared dimension feeds the fingerprint.
+    monkeypatch.setattr(SentenceTransformerEmbedder, "dimension", property(lambda self: 384))
+    monkeypatch.delenv("RAG_DOCS_EMBEDDING_REVISION", raising=False)
+    config = yaml.safe_load((ROOT / "config/benchmark.yaml").read_text(encoding="utf-8"))
+    compatibility = yaml.safe_load(
+        (ROOT / "evaluation/corpus-compatibility.yaml").read_text(encoding="utf-8")
+    )
+    settings = Settings(
+        _env_file=None,
+        chunk_tokens=config["chunk_tokens"],
+        chunk_overlap=config["chunk_overlap"],
+        embedding_batch_size=config["embedding_batch_size"],
+    )
+    app_digest = build_fingerprint(
+        build_embedder(settings), settings.chunk_tokens, settings.chunk_overlap
+    ).digest()
+
+    profiles = [
+        profile
+        for profile in config["profiles"]
+        if profile["embedding_model"] == settings.embedding_model
+    ]
+    assert profiles
+    for profile in profiles:
+        benchmark_digest = build_fingerprint(
+            profile_embedder(profile, config), config["chunk_tokens"], config["chunk_overlap"]
+        ).digest()
+        assert benchmark_digest == app_digest
+    assert app_digest in compatibility["compatible_fingerprint_digests"]

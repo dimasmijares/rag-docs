@@ -14,6 +14,9 @@ compatible_fingerprint_digests:
   - 91e7717e96ab15ea
   # WRK-TASK-082: IndexFingerprint gana payload_schema_version (ADR-RAG-009);
   # el corpus/gold sets no cambian, solo el esquema de payload de indexado.
+  # WRK-TASK-095: es también el digest de la aplicación con la configuración por
+  # defecto, porque Settings.embedding_revision fija la misma revisión que el
+  # benchmark (tests/test_container.py lo verifica). No se añade ningún digest.
   - 724f6786a9170f8b
 policy: >-
   El corpus es aditivo (ADR-RAG-011): una versión nueva se publica con su propio

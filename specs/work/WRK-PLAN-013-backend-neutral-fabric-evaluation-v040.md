@@ -48,7 +48,7 @@ paridad de recall entre backends está medida; `scripts/verify.ps1` sigue sin re
 | 1 | WRK-TASK-094 | completed | — | Costuras de store y factoría por backend |
 | 2 | WRK-TASK-097 | completed | — | Gate público para artefactos Fabric |
 | 3 | WRK-TASK-093 | completed | 086 | Fingerprint vigente expuesto en la API |
-| 4 | WRK-TASK-095 | draft | 094 | Revisión de embeddings fijada |
+| 4 | WRK-TASK-095 | completed | 094 | Revisión de embeddings fijada |
 | 5 | WRK-TASK-096 | draft | 094 | Suite de contrato de VectorStore |
 | 6 | WRK-TASK-098 | draft | 094 | Comparabilidad por backend |
 | 7 | WRK-TASK-099 | draft | 097 | Bootstrap del workspace Fabric |

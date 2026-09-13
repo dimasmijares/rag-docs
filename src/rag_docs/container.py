@@ -13,6 +13,14 @@ from rag_docs.sources.local import LocalFolderSource
 from rag_docs.vector_store import QdrantVectorStore
 
 
+def build_embedder(settings: Settings) -> SentenceTransformerEmbedder:
+    return SentenceTransformerEmbedder(
+        settings.embedding_model,
+        settings.embedding_batch_size,
+        settings.embedding_revision,
+    )
+
+
 def _qdrant_store(settings: Settings) -> VectorStorePort:
     return QdrantVectorStore(settings.qdrant_url, settings.qdrant_collection)
 
@@ -41,9 +49,7 @@ class ApplicationContainer:
             self.settings.sources_file
         )
         self.sources = [LocalFolderSource(definition) for definition in self.source_definitions]
-        self.embedder = SentenceTransformerEmbedder(
-            self.settings.embedding_model, self.settings.embedding_batch_size
-        )
+        self.embedder = build_embedder(self.settings)
         self.store = build_vector_store(self.settings)
         profiles = [
             GeneratorProfile(
