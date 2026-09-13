@@ -5,9 +5,9 @@ layer: work-task
 scope: ephemeral
 status: draft
 confidence: low
-version: 0.2.0
+version: 0.3.0
 created: 2026-09-01
-updated: 2026-09-04
+updated: 2026-09-13
 owner: rag-docs-team
 parent: WRK-PLAN-006
 activates: [ARCH-002, DOM-RAG-002, FEAT-RAG-002, DOC-RAG-002, RULE-002, RULE-004]
@@ -17,6 +17,10 @@ dependencies:
   - id: WRK-TASK-082
     relation: depends-on
   - id: ADR-RAG-008
+    relation: depends-on
+  - id: WRK-TASK-094
+    relation: depends-on
+  - id: ADR-RAG-013
     relation: depends-on
 tags: [postgresql, sqlalchemy, alembic, outbox, ledger]
 ---
@@ -38,6 +42,9 @@ outbox mediante SQLAlchemy y Alembic, con el esquema ya preparado para multi-ten
 - [ ] Existe un ledger documental con `document_id`, `content_hash`, `index_fingerprint`, contadores
       y marcas temporales, que sustituye al recorrido de la colección como fuente de qué está
       indexado.
+- [ ] El ledger se implementa tras `DocumentLedgerPort` (`rag_docs.contracts`) y sus tablas usan
+      SQL portable, sin construcciones exclusivas de PostgreSQL, para compartir suite de contrato
+      con Fabric SQL (`ADR-RAG-013`); jobs, outbox y leases pueden ser específicos de PostgreSQL.
 - [ ] Cada job persiste un snapshot de la configuración efectiva con la que se ejecutó.
 - [ ] Claves idempotentes y transiciones de estado están restringidas en base de datos.
 - [ ] La suite queda separada en unitaria, ejecutable sin infraestructura, e integración con

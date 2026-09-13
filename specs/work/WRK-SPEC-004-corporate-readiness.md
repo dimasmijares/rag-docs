@@ -7,7 +7,7 @@ status: active
 confidence: low
 version: 0.1.0
 created: 2026-08-30
-updated: 2026-09-01
+updated: 2026-09-13
 owner: rag-docs-team
 activates: [ARCH-001, ARCH-002, DOM-RAG-001, DOM-RAG-002, FEAT-RAG-001, FEAT-RAG-002, FEAT-RAG-003, FEAT-RAG-004, DOC-RAG-001, DOC-RAG-002, RULE-001, RULE-002, RULE-003, RULE-004]
 dependencies:
@@ -37,7 +37,8 @@ seguridad, después operación corporativa, extracción de ocho servicios y desp
 
 ## Acceptance Criteria
 
-- [x] Las releases `v0.2.0` a `v3.0.0` tienen work spec, plan, dependencias y gate explícitos.
+- [x] Las releases `v0.2.0` a `v3.0.0`, incluidas `v0.4.0` y `v1.1.0` del perfil Fabric, tienen
+      work spec, plan, dependencias y gate explícitos.
 - [ ] Despliegue reproducible y persistente con separación de secretos.
 - [ ] Autenticación y ACL impiden recuperar contenido no autorizado.
 - [ ] Conectores preservan identidad, versión, permisos y sincronización incremental.
@@ -47,3 +48,6 @@ seguridad, después operación corporativa, extracción de ocho servicios y desp
 
 - Roadmap aprobado en `RFC-002`; ejecución pendiente de `WRK-PLAN-004`.
 - `WRK-TASK-023` validó los work specs, planes, dependencias y gates de `v0.2.0` a `v3.0.0`.
+- `RFC-004` añade el perfil opcional de Microsoft Fabric: `v0.4.0` (`WRK-SPEC-013`/`WRK-PLAN-013`,
+  tareas `093`–`104`) y `v1.1.0` (`WRK-SPEC-014`/`WRK-PLAN-014`, tareas `105`–`115`); multimodal
+  pasa a `v1.2.0`.

@@ -7,15 +7,17 @@ status: draft
 confidence: low
 version: 0.1.0
 created: 2026-09-01
-updated: 2026-09-02
+updated: 2026-09-13
 owner: rag-docs-team
 parent: WRK-SPEC-007
 activates: [ARCH-002, DOM-RAG-001, DOM-RAG-002, FEAT-RAG-001, DOC-RAG-002, RULE-001, RULE-004]
 dependencies: []
-tags: [release-plan, v1.1.0, retrieval, multimodal]
+tags: [release-plan, v1.2.0, retrieval, multimodal]
 ---
 
-# WRK-PLAN-007 — Calidad y multimodal v1.1.0
+# WRK-PLAN-007 — Calidad y multimodal v1.2.0
+
+Renumerado de `v1.1.0` a `v1.2.0` por `RFC-004`; sigue a `WRK-PLAN-014` (`v1.1.0`).
 
 ## Task Decomposition
 

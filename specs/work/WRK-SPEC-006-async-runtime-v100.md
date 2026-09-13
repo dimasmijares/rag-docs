@@ -7,11 +7,13 @@ status: draft
 confidence: low
 version: 0.1.0
 created: 2026-09-01
-updated: 2026-09-01
+updated: 2026-09-13
 owner: rag-docs-team
 activates: [ARCH-002, DOM-RAG-002, FEAT-RAG-002, DOC-RAG-002, RULE-001, RULE-002, RULE-004]
 dependencies:
-  - id: WRK-SPEC-012
+  - id: WRK-SPEC-013
+    relation: depends-on
+  - id: ADR-RAG-013
     relation: depends-on
   - id: ADR-003
     relation: depends-on
@@ -36,6 +38,8 @@ ofrecer API y web de progreso en un Compose que no requiera Python en el host.
 - [ ] PostgreSQL es el único recurso transaccional y el ledger documental es la fuente de qué
       está indexado.
 - [ ] El esquema nace multi-tenant y no requiere migración transversal en `v1.5.0`.
+- [ ] El ledger documental se consume tras `DocumentLedgerPort` con esquema SQL portable
+      (`ADR-RAG-013`), de modo que el perfil Fabric de `v1.1.0` lo reutiliza sin rediseño.
 
 ## Evidence
 
