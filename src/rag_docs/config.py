@@ -48,6 +48,11 @@ class Settings(BaseSettings):
     qdrant_url: str = "http://127.0.0.1:6333"
     qdrant_collection: str = "rag_docs"
     embedding_model: str = "intfloat/multilingual-e5-small"
+    #: Pinned Hugging Face revision of ``embedding_model`` (WRK-TASK-095). It is
+    #: part of ``IndexFingerprint`` (RULE-004), so it matches the revision
+    #: ``config/benchmark.yaml`` pins: app and benchmark then build the same
+    #: digest. An index built without a pinned revision requires a migration.
+    embedding_revision: str | None = "614241f622f53c4eeff9890bdc4f31cfecc418b3"
     embedding_batch_size: int = 16
     ollama_url: str = "http://127.0.0.1:11434"
     ollama_model: str = "qwen2.5:3b"

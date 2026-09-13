@@ -187,6 +187,13 @@ entonces mueve el alias; la colección anterior no se borra, así que
 vinculación de fingerprint desactualizada rechaza la consulta, y rollback) contra el corpus
 sintético, sin Docker.
 
+**Nota de migración `v0.4.0` (revisión de embeddings fijada).** `RAG_DOCS_EMBEDDING_REVISION` fija
+por defecto la misma revisión del modelo de embeddings que `config/benchmark.yaml`, así que la
+aplicación y el benchmark producen el mismo digest (`724f6786a9170f8b`, declarado en
+`evaluation/corpus-compatibility.yaml`). Un índice construido con una versión anterior, sin revisión
+fijada, tiene otro fingerprint: la API rechaza consultarlo hasta migrar según `RULE-004`, con
+`migrate_and_publish` o reindexando sobre un nombre lógico nuevo.
+
 **Ámbito obligatorio (`RULE-003`, `ADR-RAG-009`).** `VectorStorePort.search`/`scan_chunks` exigen un
 `Scope` (`tenant`, `subjects`, `classification`) sin valor por defecto: no existe una ruta de
 consulta que omita el prefiltrado de autorización. `AuthorizationPort.resolve_scope` lo resuelve por

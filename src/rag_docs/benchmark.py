@@ -485,17 +485,26 @@ def _aggregate_profile(profile: dict[str, Any], cases: list[dict[str, Any]]) -> 
     }
 
 
+def profile_embedder(
+    profile: dict[str, Any], config: dict[str, Any]
+) -> SentenceTransformerEmbedder:
+    """The embedder a benchmark profile indexes and queries with. Its revision
+    is always the pinned one, like the app's ``Settings.embedding_revision``,
+    so both build the same fingerprint digest (WRK-TASK-095)."""
+    return SentenceTransformerEmbedder(
+        str(profile["embedding_model"]),
+        int(config["embedding_batch_size"]),
+        str(profile["embedding_revision"]),
+    )
+
+
 def _build_services(
     profile: dict[str, Any],
     config: dict[str, Any],
     source_definitions: list[SourceDefinition],
     ollama_url: str,
 ) -> tuple[QueryService, StageRecorder, float, IndexFingerprint]:
-    index_embedder = SentenceTransformerEmbedder(
-        str(profile["embedding_model"]),
-        int(config["embedding_batch_size"]),
-        str(profile["embedding_revision"]),
-    )
+    index_embedder = profile_embedder(profile, config)
     store = QdrantVectorStore(":memory:", f"benchmark_{profile['id']}")
     sources = [LocalFolderSource(item) for item in source_definitions]
     started = perf_counter()
@@ -512,14 +521,7 @@ def _build_services(
     if index_report.errors:
         raise RuntimeError(f"La indexación falló en {len(index_report.errors)} documento(s)")
     recorder = StageRecorder()
-    query_embedder = TimedEmbedder(
-        SentenceTransformerEmbedder(
-            str(profile["embedding_model"]),
-            int(config["embedding_batch_size"]),
-            str(profile["embedding_revision"]),
-        ),
-        recorder,
-    )
+    query_embedder = TimedEmbedder(profile_embedder(profile, config), recorder)
     if profile["generator_mode"] == "forced_fallback":
         raw_generator: Generator = ForcedFallbackGenerator(str(profile["generator_model"]))
     else:
