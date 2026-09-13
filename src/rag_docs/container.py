@@ -40,6 +40,11 @@ VECTOR_STORE_FACTORIES: dict[str, Callable[[Settings], VectorStorePort]] = {
 }
 
 
+#: Search mode each backend serves, declared in reports (ADR-RAG-013, WRK-TASK-098):
+#: Qdrant collections use their default HNSW index; Fabric SQL runs exact VECTOR_DISTANCE.
+VECTOR_SEARCH_MODES: dict[str, str] = {"qdrant": "hnsw", "fabric_sql": "exact"}
+
+
 def build_vector_store(settings: Settings) -> VectorStorePort:
     factory = VECTOR_STORE_FACTORIES.get(settings.vector_backend)
     if factory is None:

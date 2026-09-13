@@ -191,5 +191,21 @@ def test_sources_expose_the_live_index_fingerprint_additively(tmp_path: Path) ->
         field: getattr(expected, field) for field in expected.__dataclass_fields__
     }
     # Backward compatibility: the pre-existing contract is untouched.
-    assert set(body) == {"sources", "index_fingerprint"}
+    assert set(body) == {"sources", "index_fingerprint", "vector_backend", "vector_search_mode"}
     assert set(body["sources"][0]) == {"id", "type", "root", "available", "include", "exclude"}
+
+
+def test_sources_declare_the_backend_and_search_mode_served(tmp_path: Path) -> None:
+    from rag_docs.config import Settings
+
+    indexing = IndexingService([], FakeEmbedder(), FakeVectorStore())
+    for backend, mode in (("qdrant", "hnsw"), ("fabric_sql", "exact")):
+        container = SimpleNamespace(
+            settings=Settings(_env_file=None, vector_backend=backend),
+            source_definitions=[SourceDefinition(id="demo", root=tmp_path)],
+            indexing=indexing,
+            query=FakeQuery(),
+        )
+        body = TestClient(create_app(container)).get("/api/sources").json()
+
+        assert (body["vector_backend"], body["vector_search_mode"]) == (backend, mode)

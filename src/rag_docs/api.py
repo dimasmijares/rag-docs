@@ -11,8 +11,9 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from rag_docs import __version__
-from rag_docs.container import ApplicationContainer
+from rag_docs.container import VECTOR_SEARCH_MODES, ApplicationContainer
 from rag_docs.contracts import AppError, ErrorKind, http_status_for
+from rag_docs.evaluation import DEFAULT_VECTOR_BACKEND, DEFAULT_VECTOR_SEARCH_MODE
 from rag_docs.generation import GenerationError, InvalidGeneratedResponse
 
 logger = logging.getLogger(__name__)
@@ -56,14 +57,19 @@ def create_app(container: ApplicationContainer | Any | None = None) -> FastAPI:
         description=(
             "Configuración y disponibilidad de raíces. Desde 0.4.0 incluye además "
             "`index_fingerprint`: los campos del `IndexFingerprint` vigente y su "
-            "`digest` (WRK-TASK-093). Cambio aditivo: ningún campo previo cambia."
+            "`digest` (WRK-TASK-093), y `vector_backend`/`vector_search_mode` del "
+            "índice servido (WRK-TASK-101). Cambio aditivo: ningún campo previo cambia."
         ),
     )
     def get_sources() -> dict[str, Any]:
         definitions = app.state.container.source_definitions
         fingerprint = app.state.container.indexing.fingerprint
+        settings = getattr(app.state.container, "settings", None)
+        backend = getattr(settings, "vector_backend", DEFAULT_VECTOR_BACKEND)
         return {
             "index_fingerprint": {**asdict(fingerprint), "digest": fingerprint.digest()},
+            "vector_backend": backend,
+            "vector_search_mode": VECTOR_SEARCH_MODES.get(backend, DEFAULT_VECTOR_SEARCH_MODE),
             "sources": [
                 {
                     "id": source.id,
