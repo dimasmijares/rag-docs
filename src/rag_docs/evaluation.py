@@ -17,6 +17,36 @@ from rag_docs.language import normalized_contains, text_matches_language
 
 DEFAULT_CORPUS_COMPATIBILITY = Path("evaluation/corpus-compatibility.yaml")
 
+#: Evaluation and benchmark report schema (WRK-TASK-098). 1.1 declares
+#: ``vector_backend`` and ``vector_search_mode``, which join corpus_version and
+#: the fingerprint digest in the comparability key (ADR-RAG-013).
+REPORT_SCHEMA_VERSION = "1.1"
+LEGACY_REPORT_SCHEMA_VERSION = "1.0"
+#: Every report before 1.1 ran against Qdrant with its default HNSW index, and
+#: an API that does not declare its backend can only be serving Qdrant.
+DEFAULT_VECTOR_BACKEND = "qdrant"
+DEFAULT_VECTOR_SEARCH_MODE = "hnsw"
+
+
+def report_vector_backend(
+    report: dict[str, Any], profile: dict[str, Any] | None = None
+) -> tuple[str, str]:
+    """``(vector_backend, vector_search_mode)`` of a report or one of its
+    profiles. A 1.0 report (or one without ``schema_version``) reads as
+    ``qdrant``/``hnsw``; a 1.1 report that omits them is invalid."""
+    for source in (profile or {}, report):
+        backend = source.get("vector_backend")
+        mode = source.get("vector_search_mode")
+        if backend and mode:
+            return str(backend), str(mode)
+    schema_version = report.get("schema_version", LEGACY_REPORT_SCHEMA_VERSION)
+    if schema_version == LEGACY_REPORT_SCHEMA_VERSION:
+        return DEFAULT_VECTOR_BACKEND, DEFAULT_VECTOR_SEARCH_MODE
+    raise ValueError(
+        f"El informe con schema_version={schema_version!r} no declara vector_backend "
+        "y vector_search_mode."
+    )
+
 
 def load_corpus_compatibility(path: Path) -> dict[str, Any]:
     """Corpus/gold-set/fingerprint compatibility manifest (``ADR-RAG-011``,
@@ -63,15 +93,17 @@ def verify_fingerprint_compatibility(
         )
 
 
-def live_index_fingerprint(client: httpx.Client) -> dict[str, Any]:
-    """The ``IndexFingerprint`` the running API is actually serving
-    (``GET /api/sources``, ``WRK-TASK-093``), in the same shape
-    ``benchmark._fingerprint_payload`` records. The digest is recomputed from
+def live_index_descriptor(client: httpx.Client) -> dict[str, Any]:
+    """The index the running API is actually serving (``GET /api/sources``):
+    its ``IndexFingerprint`` (``WRK-TASK-093``), in the same shape
+    ``benchmark._fingerprint_payload`` records, plus ``vector_backend`` and
+    ``vector_search_mode`` (``WRK-TASK-098``). The digest is recomputed from
     the fields, so a payload whose declared digest does not match them fails
     explicitly instead of being trusted."""
     response = client.get("/api/sources")
     response.raise_for_status()
-    payload = response.json().get("index_fingerprint")
+    body = response.json()
+    payload = body.get("index_fingerprint")
     if not payload:
         raise RuntimeError(
             "La API no expone index_fingerprint en GET /api/sources; no se puede "
@@ -87,7 +119,11 @@ def live_index_fingerprint(client: httpx.Client) -> dict[str, Any]:
             f"El digest declarado por la API ({payload.get('digest')}) no coincide con "
             f"el calculado a partir de sus campos ({fingerprint.digest()})."
         )
-    return {**asdict(fingerprint), "digest": fingerprint.digest()}
+    return {
+        "index_fingerprint": {**asdict(fingerprint), "digest": fingerprint.digest()},
+        "vector_backend": body.get("vector_backend", DEFAULT_VECTOR_BACKEND),
+        "vector_search_mode": body.get("vector_search_mode", DEFAULT_VECTOR_SEARCH_MODE),
+    }
 
 
 def _percentile(values: list[float], percentile: float) -> float:
@@ -329,7 +365,8 @@ def evaluate(
     with httpx.Client(base_url=base_url, timeout=240, transport=transport) as client:
         # Before scoring any case: an index incompatible with this corpus fails
         # explicitly instead of producing low metrics (RULE-004, ADR-RAG-011).
-        index_fingerprint = live_index_fingerprint(client)
+        live_index = live_index_descriptor(client)
+        index_fingerprint = live_index["index_fingerprint"]
         verify_fingerprint_compatibility(compatibility, index_fingerprint["digest"])
         for case in gold["cases"]:
             started = perf_counter()
@@ -370,10 +407,13 @@ def evaluate(
         if item.get("model") or item.get("embedding_model")
     }
     return {
+        "schema_version": REPORT_SCHEMA_VERSION,
         "timestamp": datetime.now(UTC).isoformat(),
         "gold_set": str(gold_path),
         "corpus_version": gold.get("corpus_version"),
         "index_fingerprint": index_fingerprint,
+        "vector_backend": live_index["vector_backend"],
+        "vector_search_mode": live_index["vector_search_mode"],
         "config_snapshot": {
             "model": next(iter(observed_models))[0] if observed_models else None,
             "embedding_model": next(iter(observed_models))[1] if observed_models else None,

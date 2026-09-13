@@ -345,10 +345,12 @@ def _write_evaluation_inputs(tmp_path: Path, compatible_digests: list[str]) -> t
     return gold, compatibility
 
 
-def _live_api(fingerprint_payload: dict | None, queried: list[str]) -> httpx.MockTransport:
+def _live_api(
+    fingerprint_payload: dict | None, queried: list[str], **declared: str
+) -> httpx.MockTransport:
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/api/sources":
-            body: dict = {"sources": []}
+            body: dict = {"sources": [], **declared}
             if fingerprint_payload is not None:
                 body["index_fingerprint"] = fingerprint_payload
             return httpx.Response(200, json=body)
@@ -381,6 +383,8 @@ def test_evaluate_records_the_live_index_fingerprint_when_compatible(tmp_path: P
     )
 
     assert report["index_fingerprint"] == _payload()
+    assert report["schema_version"] == "1.1"
+    assert (report["vector_backend"], report["vector_search_mode"]) == ("qdrant", "hnsw")
     assert report["index_fingerprint"]["digest"] == LIVE_FINGERPRINT.digest()
     assert report["passed"] == report["total"] == 1
     assert queried == ["/api/query"]
@@ -418,3 +422,18 @@ def test_evaluate_rejects_an_api_without_fingerprint_or_with_a_forged_digest(
         evaluate(
             "http://api", gold, compatibility_path=compatibility, transport=_live_api(forged, [])
         )
+
+
+def test_evaluate_records_the_backend_the_api_declares(tmp_path: Path) -> None:
+    gold, compatibility = _write_evaluation_inputs(tmp_path, [LIVE_FINGERPRINT.digest()])
+
+    report = evaluate(
+        "http://api",
+        gold,
+        compatibility_path=compatibility,
+        transport=_live_api(
+            _payload(), [], vector_backend="fabric_sql", vector_search_mode="exact"
+        ),
+    )
+
+    assert (report["vector_backend"], report["vector_search_mode"]) == ("fabric_sql", "exact")
