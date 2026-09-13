@@ -1,0 +1,50 @@
+{
+    "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/variableLibrary/definition/variables/1.0.0/schema.json",
+    "variables": [
+        {
+            "name": "lakehouse_name",
+            "note": "Lakehouse de evaluación (Delta) del perfil Fabric.",
+            "type": "String",
+            "value": "ragdocs_eval"
+        },
+        {
+            "name": "sql_database_name",
+            "note": "SQL database con ledger y tablas vectoriales derivadas (ADR-RAG-013).",
+            "type": "String",
+            "value": "ragdocs_vectors"
+        },
+        {
+            "name": "environment_name",
+            "note": "Environment con el wheel del proyecto.",
+            "type": "String",
+            "value": "ragdocs_env"
+        },
+        {
+            "name": "corpus_version",
+            "note": "Debe coincidir con evaluation/corpus-compatibility.yaml.",
+            "type": "String",
+            "value": "0.2.0"
+        },
+        {
+            "name": "embedding_model",
+            "type": "String",
+            "value": "intfloat/multilingual-e5-small"
+        },
+        {
+            "name": "embedding_revision",
+            "note": "Revisión fijada (WRK-TASK-095): mismo digest que la app local.",
+            "type": "String",
+            "value": "614241f622f53c4eeff9890bdc4f31cfecc418b3"
+        },
+        {
+            "name": "vector_backend",
+            "type": "String",
+            "value": "fabric_sql"
+        },
+        {
+            "name": "vector_search_mode",
+            "type": "String",
+            "value": "exact"
+        }
+    ]
+}

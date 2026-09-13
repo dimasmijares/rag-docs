@@ -30,6 +30,10 @@ dev = [
   "pytest-cov>=6,<8",
   "ruff>=0.8,<1",
 ]
+# Perfil opcional Microsoft Fabric (RFC-004, WRK-TASK-099). scripts/verify.ps1 no lo requiere.
+fabric = [
+  "azure-identity>=1.19,<2",
+]
 
 [project.scripts]
 rag-docs = "rag_docs.main:run"
