@@ -4,8 +4,8 @@ type: spec
 layer: documentation
 scope: persistent
 status: draft
-confidence: low
-version: 0.1.0
+confidence: medium
+version: 0.2.0
 created: 2026-09-13
 updated: 2026-09-13
 owner: rag-docs-team
@@ -38,14 +38,110 @@ La documentación cubrirá:
 - Identidad: service principal de Entra ID con certificado, rol de mínimo privilegio en el
   workspace, y habilitación del uso de APIs de Fabric por service principals, que hace una persona
   administradora del tenant.
-- Git integration de la carpeta `fabric/` (notebooks, pipelines, informes PBIP).
+- Definiciones de items versionadas en `fabric/` y desplegadas con Fabric CLI (`fab import`); el
+  repositorio es la fuente de verdad. Git integration con GitHub queda opcional (requiere ajuste de
+  tenant y una conexión con PAT) y no la usa el bootstrap.
 - Environment con el wheel del proyecto (`uv build`) y extra opcional `[fabric]`; no activar
   outbound access protection.
 - Variable library para parámetros por entorno, sin valores sensibles versionados.
 - Gate `scripts/verify-fabric.ps1`: cuándo se ejecuta, credenciales introducidas por la persona
-  usuaria y nunca en CI obligatorio.
+  usuaria y nunca en CI obligatorio (`WRK-TASK-100`).
 - Worker de inferencia local (`ADR-RAG-014`): ventana batch, arranque, parada y dead-letter.
 - Monitorización de consumo de capacidad (CU) y teardown completo del workspace.
+
+## Modelo de entornos
+
+Un workspace por entorno, actualizado en cada release; nunca un workspace por versión. Las
+versiones viven en tags de Git y en `fabric/`; los datos se separan por fingerprint (tabla física y
+alias, `RULE-004`) y por `corpus_version`. El entorno actual es un único workspace `rag-docs` en la
+capacidad Trial; un `prod` futuro sería otro workspace desplegado desde el mismo `fabric/`.
+
+## Montaje (WRK-TASK-099)
+
+### 1. Prerrequisitos manuales
+
+- Capacidad Fabric activa (Trial o F-SKU).
+- Persona administradora del tenant: ajuste "Service principals can call Fabric public APIs"
+  habilitado, preferiblemente restringido a un grupo de seguridad con el service principal. Crear
+  workspaces con service principal no es necesario: el workspace lo crea una persona.
+- Service principal de Entra ID de un solo tenant, sin roles RBAC de Azure, con certificado cuya
+  clave privada vive sólo en el equipo del operador.
+- Herramientas: Fabric CLI (`uv tool install ms-fabric-cli`), Azure CLI y `uv`.
+- Sesiones: `az login --tenant <tenant> --allow-no-subscriptions` y `fab auth login` como persona
+  administradora del workspace. Contraseña y MFA las introduce siempre la persona.
+
+### 2. Fichero de entorno local
+
+Fuera del repositorio (por ejemplo, en el perfil del usuario), nunca versionado:
+
+```text
+FABRIC_TENANT_ID=<tenant-id>
+FABRIC_CLIENT_ID=<client-id>
+FABRIC_CLIENT_CERT_PATH=<ruta al .pem>
+FABRIC_CAPACITY_NAME=<nombre de la capacidad>
+FABRIC_WORKSPACE_NAME=rag-docs
+```
+
+### 3. Bootstrap idempotente
+
+```powershell
+./fabric/bootstrap.ps1 -EnvFile <ruta a fabric.env>
+```
+
+El script, con `fab exists` antes de cada creación:
+
+1. Crea el workspace `rag-docs` en la capacidad (`fab mkdir … -P capacityName=…`).
+2. Crea `ragdocs_eval.Lakehouse`, `ragdocs_vectors.SQLDatabase`, `ragdocs_env.Environment` y
+   `ragdocs_params.VariableLibrary`.
+3. Importa la variable library desde `fabric/ragdocs_params.VariableLibrary` (`fab import -f`).
+4. Resuelve el objectId del service principal (`az ad sp show`) y le asigna **Contributor** en el
+   workspace (`fab acl set`).
+5. Construye el wheel (`uv build --wheel`), lo sube como librería custom del Environment y publica
+   (`fabric/tools/fabric_api.py publish-wheel`, REST de Fabric, porque `fab` 1.7 no sube
+   librerías). La publicación tarda varios minutos.
+6. Verifica, autenticando como service principal con certificado, que ve los cuatro items
+   (`fabric/tools/fabric_api.py check-access --as sp`).
+
+### Items y parámetros
+
+| Item | Propósito |
+|---|---|
+| `ragdocs_eval.Lakehouse` | Plano de evaluación en Delta (`WRK-TASK-102`) |
+| `ragdocs_vectors.SQLDatabase` | Ledger y tablas vectoriales derivadas (`ADR-RAG-013`, `WRK-TASK-100`) |
+| `ragdocs_env.Environment` | Runtime Spark 1.3 con el wheel `rag_docs` |
+| `ragdocs_params.VariableLibrary` | Nombres de items, `corpus_version`, modelo y revisión de embeddings, backend y modo de búsqueda |
+
+La variable library sólo contiene valores no sensibles; los notebooks resuelven items por nombre,
+nunca por ID.
+
+### Mínimo privilegio
+
+- Contributor es el rol mínimo que permite escribir en la SQL database y en tablas Delta del
+  Lakehouse; Viewer o compartir items no dan escritura en el Lakehouse.
+- Alternativa más estricta si el Lakehouse deja de escribirse desde el service principal: Viewer en
+  el workspace más `GRANT` por esquema en la SQL database.
+- El service principal no tiene roles de Azure, ni Admin/Member en el workspace, ni permisos de
+  APIs de administración.
+
+## Verificación
+
+- `fabric/tools/fabric_api.py check-access --as sp` termina en 0 con los cuatro items en `ok`.
+- `fab get rag-docs.Workspace/ragdocs_env.Environment -q properties.publishDetails` muestra
+  `state: Success`.
+- `scripts/check-public-safety.ps1` supera `fabric/` (`WRK-TASK-097`).
+- `scripts/verify.ps1` sigue en verde sin el extra `[fabric]` ni credenciales.
+
+## Desmontaje
+
+Irreversible; lo ejecuta la persona operadora:
+
+```powershell
+fab acl del rag-docs.Workspace -I <objectId del service principal> -f
+fab rm rag-docs.Workspace -f
+```
+
+Borrar el workspace elimina todos sus items y datos. Si el perfil se abandona, revocar además el
+certificado del service principal o borrar la app registration en Entra ID.
 
 ## Acceptance Criteria
 
