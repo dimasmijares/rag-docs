@@ -3,7 +3,7 @@ id: WRK-PLAN-013
 type: spec
 layer: work-plan
 scope: ephemeral
-status: draft
+status: active
 confidence: medium
 version: 0.1.0
 created: 2026-09-13
@@ -46,7 +46,7 @@ paridad de recall entre backends está medida; `scripts/verify.ps1` sigue sin re
 | Orden | Tarea | Estado | Dependencias | Entrega |
 |---:|---|---|---|---|
 | 1 | WRK-TASK-094 | draft | — | Costuras de store y factoría por backend |
-| 2 | WRK-TASK-097 | draft | — | Gate público para artefactos Fabric |
+| 2 | WRK-TASK-097 | completed | — | Gate público para artefactos Fabric |
 | 3 | WRK-TASK-093 | draft | 086 | Fingerprint vigente expuesto en la API |
 | 4 | WRK-TASK-095 | draft | 094 | Revisión de embeddings fijada |
 | 5 | WRK-TASK-096 | draft | 094 | Suite de contrato de VectorStore |
