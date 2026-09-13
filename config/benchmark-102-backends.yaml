@@ -1,0 +1,71 @@
+schema_version: "1.0"
+benchmark_id: wrk-task-102-backend-parity
+seed: 0
+embedding_batch_size: 16
+chunk_tokens: 500
+chunk_overlap: 75
+ollama_timeout: 180
+ollama_temperature: 0.0
+source_file: config/sources.yaml
+development_gold: evaluation/gold-set.dev.yaml
+validation_gold: evaluation/gold-set.validation.yaml
+corpus_manifest: examples/corpus/demo/manifest.sha256
+selection:
+  order: [score, retrieval_recall_at_8, latency_p95_ms]
+  require_baseline_eligible: true
+# WRK-TASK-102: dense y dense-reranked en Qdrant y en Fabric SQL. Generador extractivo forzado
+# (como WRK-TASK-038) para aislar el retrieval: la paridad que se mide es de recall, no de
+# respuestas del LLM. Los perfiles fabric_sql requieren RAG_DOCS_FABRIC_* (verify-fabric.ps1).
+profiles:
+  - id: dense-qdrant
+    baseline_eligible: true
+    vector_backend: qdrant
+    retrieval_strategy: dense
+    generator_mode: forced_fallback
+    generator_model: qwen2.5:3b
+    generator_digest: 357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b
+    embedding_model: intfloat/multilingual-e5-small
+    embedding_revision: 614241f622f53c4eeff9890bdc4f31cfecc418b3
+    retrieval_top_k: 8
+    context_chunks: 5
+    min_score: 0.45
+  - id: dense-fabric-sql
+    baseline_eligible: false
+    vector_backend: fabric_sql
+    retrieval_strategy: dense
+    generator_mode: forced_fallback
+    generator_model: qwen2.5:3b
+    generator_digest: 357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b
+    embedding_model: intfloat/multilingual-e5-small
+    embedding_revision: 614241f622f53c4eeff9890bdc4f31cfecc418b3
+    retrieval_top_k: 8
+    context_chunks: 5
+    min_score: 0.45
+  - id: dense-reranked-qdrant
+    baseline_eligible: false
+    vector_backend: qdrant
+    retrieval_strategy: dense
+    reranker_model: cross-encoder/mmarco-mMiniLMv2-L12-H384-v1
+    rerank_top_n: 5
+    generator_mode: forced_fallback
+    generator_model: qwen2.5:3b
+    generator_digest: 357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b
+    embedding_model: intfloat/multilingual-e5-small
+    embedding_revision: 614241f622f53c4eeff9890bdc4f31cfecc418b3
+    retrieval_top_k: 8
+    context_chunks: 5
+    min_score: 0.45
+  - id: dense-reranked-fabric-sql
+    baseline_eligible: false
+    vector_backend: fabric_sql
+    retrieval_strategy: dense
+    reranker_model: cross-encoder/mmarco-mMiniLMv2-L12-H384-v1
+    rerank_top_n: 5
+    generator_mode: forced_fallback
+    generator_model: qwen2.5:3b
+    generator_digest: 357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b
+    embedding_model: intfloat/multilingual-e5-small
+    embedding_revision: 614241f622f53c4eeff9890bdc4f31cfecc418b3
+    retrieval_top_k: 8
+    context_chunks: 5
+    min_score: 0.45

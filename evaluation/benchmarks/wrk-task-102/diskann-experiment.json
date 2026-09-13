@@ -1,0 +1,322 @@
+{
+  "experiment": "wrk-task-102-diskann",
+  "index_fingerprint": "724f6786a9170f8b",
+  "vector_backend": "fabric_sql",
+  "top_k": 8,
+  "distractors_per_chunk": 14,
+  "distractor_noise": 0.05,
+  "rows": {
+    "in_scope": 22,
+    "distractors": 308
+  },
+  "diskann_index": {
+    "usable": true,
+    "seconds_until_usable": 0.5,
+    "last_error": null
+  },
+  "exact_matches_fabric_sql_store": true,
+  "summary": {
+    "exact": {
+      "mean_returned": 8,
+      "cases_with_fewer_than_k": 0,
+      "mean_overlap_with_exact": 8,
+      "mean_document_recall": 1.0
+    },
+    "diskann": {
+      "mean_returned": 8,
+      "cases_with_fewer_than_k": 0,
+      "mean_overlap_with_exact": 8,
+      "mean_document_recall": 1.0
+    }
+  },
+  "latency_ms_p50_same_backend": {
+    "exact": 18.71,
+    "diskann": 17.9
+  },
+  "decision": {
+    "adopted": false,
+    "reason": "DiskANN no mejora el recall de la búsqueda exacta"
+  },
+  "cases": [
+    {
+      "split": "dev",
+      "case_id": "dev-etl-target",
+      "exact": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      },
+      "diskann": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      }
+    },
+    {
+      "split": "dev",
+      "case_id": "dev-etl-time",
+      "exact": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      },
+      "diskann": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      }
+    },
+    {
+      "split": "dev",
+      "case_id": "dev-etl-path",
+      "exact": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      },
+      "diskann": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      }
+    },
+    {
+      "split": "dev",
+      "case_id": "dev-orchestrator-name",
+      "exact": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      },
+      "diskann": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      }
+    },
+    {
+      "split": "dev",
+      "case_id": "dev-monitor-panel",
+      "exact": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      },
+      "diskann": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      }
+    },
+    {
+      "split": "dev",
+      "case_id": "dev-alert-channel",
+      "exact": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      },
+      "diskann": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      }
+    },
+    {
+      "split": "dev",
+      "case_id": "dev-client-owner",
+      "exact": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      },
+      "diskann": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      }
+    },
+    {
+      "split": "dev",
+      "case_id": "dev-contract-sla",
+      "exact": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      },
+      "diskann": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      }
+    },
+    {
+      "split": "dev",
+      "case_id": "dev-flow-output",
+      "exact": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      },
+      "diskann": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      }
+    },
+    {
+      "split": "dev",
+      "case_id": "dev-publication-control",
+      "exact": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      },
+      "diskann": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      }
+    },
+    {
+      "split": "dev",
+      "case_id": "dev-incident-first-check",
+      "exact": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      },
+      "diskann": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      }
+    },
+    {
+      "split": "dev",
+      "case_id": "dev-recovery-command",
+      "exact": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      },
+      "diskann": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      }
+    },
+    {
+      "split": "dev",
+      "case_id": "dev-client-flow-equivalent",
+      "exact": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": null
+      },
+      "diskann": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": null
+      }
+    },
+    {
+      "split": "dev",
+      "case_id": "dev-incident-response",
+      "exact": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      },
+      "diskann": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      }
+    },
+    {
+      "split": "validation",
+      "case_id": "val-atlas-restore-equivalent",
+      "exact": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": null
+      },
+      "diskann": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": null
+      }
+    },
+    {
+      "split": "validation",
+      "case_id": "val-atlas-route-target",
+      "exact": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      },
+      "diskann": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      }
+    },
+    {
+      "split": "validation",
+      "case_id": "val-atlas-gateway-slo",
+      "exact": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      },
+      "diskann": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      }
+    },
+    {
+      "split": "validation",
+      "case_id": "val-atlas-oncall-first-check",
+      "exact": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      },
+      "diskann": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      }
+    },
+    {
+      "split": "validation",
+      "case_id": "val-atlas-rollback-sequence",
+      "exact": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      },
+      "diskann": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      }
+    },
+    {
+      "split": "validation",
+      "case_id": "val-atlas-service-operation",
+      "exact": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      },
+      "diskann": {
+        "returned": 8,
+        "overlap_with_exact": 8,
+        "document_recall": 1.0
+      }
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "benchmark_id": "wrk-task-102-backend-parity",
+  "phase": "development",
+  "corpus_version": "0.2.0",
+  "pairs": [
+    {
+      "reference_profile": "dense-qdrant",
+      "candidate_profile": "dense-fabric-sql",
+      "reference_backend": "qdrant",
+      "reference_search_mode": "hnsw",
+      "candidate_backend": "fabric_sql",
+      "candidate_search_mode": "exact",
+      "index_fingerprint": "724f6786a9170f8b",
+      "recall_reference": {
+        "recall_at_1": 0.571429,
+        "recall_at_3": 0.928571,
+        "recall_at_5": 1.0,
+        "recall_at_8": 1.0,
+        "reciprocal_rank": 0.728571
+      },
+      "recall_candidate": {
+        "recall_at_1": 0.571429,
+        "recall_at_3": 0.928571,
+        "recall_at_5": 1.0,
+        "recall_at_8": 1.0,
+        "reciprocal_rank": 0.728571
+      },
+      "recall_delta": {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_8": 0.0,
+        "reciprocal_rank": 0.0
+      },
+      "cases_with_different_retrieval": [],
+      "recall_parity": true,
+      "latency_comparable": false,
+      "latency_p95_ms_by_backend": {
+        "qdrant": 2.33,
+        "fabric_sql": 127.25
+      }
+    },
+    {
+      "reference_profile": "dense-reranked-qdrant",
+      "candidate_profile": "dense-reranked-fabric-sql",
+      "reference_backend": "qdrant",
+      "reference_search_mode": "hnsw",
+      "candidate_backend": "fabric_sql",
+      "candidate_search_mode": "exact",
+      "index_fingerprint": "724f6786a9170f8b",
+      "recall_reference": {
+        "recall_at_1": 0.642857,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_8": 1.0,
+        "reciprocal_rank": 0.797619
+      },
+      "recall_candidate": {
+        "recall_at_1": 0.642857,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_8": 1.0,
+        "reciprocal_rank": 0.797619
+      },
+      "recall_delta": {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_8": 0.0,
+        "reciprocal_rank": 0.0
+      },
+      "cases_with_different_retrieval": [],
+      "recall_parity": true,
+      "latency_comparable": false,
+      "latency_p95_ms_by_backend": {
+        "qdrant": 2.39,
+        "fabric_sql": 145.71
+      }
+    }
+  ],
+  "recall_parity": true
+}
