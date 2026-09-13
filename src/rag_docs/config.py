@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     )
 
     sources_file: Path = Path("config/sources.yaml")
+    #: Vector backend implementation selected by the container factory
+    #: (ADR-RAG-013). Only ``qdrant`` exists; new backends add a literal here.
+    vector_backend: Literal["qdrant"] = "qdrant"
     qdrant_url: str = "http://127.0.0.1:6333"
     qdrant_collection: str = "rag_docs"
     embedding_model: str = "intfloat/multilingual-e5-small"

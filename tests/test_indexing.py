@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+from rag_docs import indexing
 from rag_docs.config import SourceDefinition
 from rag_docs.contracts import AppError
 from rag_docs.indexing import PAYLOAD_SCHEMA_VERSION, IndexingService, migrate_and_publish
@@ -140,3 +141,19 @@ def test_migrate_and_publish_leaves_the_alias_untouched_when_validation_fails(
         migrate_and_publish(migrated, lambda report, candidate_store: False)
 
     assert store._resolve_alias() == previous_physical
+
+
+def test_migrate_and_publish_rejects_a_store_without_publication_port() -> None:
+    live = IndexingService([], FakeEmbedder(), FakeVectorStore())
+
+    with pytest.raises(AppError) as excinfo:
+        migrate_and_publish(live, lambda report, candidate_store: True)
+
+    assert "IndexPublicationPort" in excinfo.value.message
+
+
+def test_indexing_module_does_not_depend_on_the_qdrant_adapter() -> None:
+    # ADR-RAG-013: indexing and migration consume ports only.
+    source = Path(indexing.__file__).read_text(encoding="utf-8")
+    assert "vector_store" not in source
+    assert "QdrantVectorStore" not in source

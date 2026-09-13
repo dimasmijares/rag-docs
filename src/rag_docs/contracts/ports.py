@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 from rag_docs.contracts.dtos import (
     DocumentCandidate,
@@ -132,17 +132,22 @@ class DocumentSourcePort(Protocol):
 
 
 class VectorStorePort(Protocol):
-    """Infrastructure seam behind ``RetrievalPort``. Its ``search`` signature now
-    carries the authorization scope (``ADR-RAG-009``) and the fingerprint
-    (``RULE-004``)."""
+    """Infrastructure seam behind ``RetrievalPort`` and the only store protocol
+    the monolith consumes (``ADR-RAG-013``). Its ``search`` signature carries the
+    authorization scope (``ADR-RAG-009``) and every read/write is checked
+    against the bound fingerprint (``RULE-004``)."""
 
     def ensure_collection(
         self, vector_size: int, fingerprint: IndexFingerprint | None = None
     ) -> None: ...
 
+    def bind_fingerprint(self, fingerprint: IndexFingerprint) -> None: ...
+
     def list_documents(self, source_ids: set[str]) -> dict[str, IndexedDocument]: ...
 
     def delete_document(self, document_id: str) -> None: ...
+
+    def prune_document(self, document_id: str, keep_chunk_ids: set[str]) -> None: ...
 
     def upsert(
         self, chunks: list[DocumentChunk], vectors: list[list[float]]
@@ -157,3 +162,31 @@ class VectorStorePort(Protocol):
     ) -> list[SearchHit]: ...
 
     def update_acl(self, document_id: str, acl: AclFields) -> None: ...
+
+    def scan_chunks(self, scope: Scope) -> list[DocumentChunk]: ...
+
+
+@runtime_checkable
+class IndexPublicationPort(Protocol):
+    """Logical alias over one physical index per fingerprint (``RULE-004``,
+    ``ADR-RAG-013``). A backend publishes a candidate by repointing the alias
+    and keeps the previous physical index for rollback."""
+
+    @property
+    def logical_name(self) -> str: ...
+
+    def physical_name_for(self, fingerprint: IndexFingerprint) -> str: ...
+
+    def published_physical_name(self) -> str | None:
+        """The physical index the alias currently resolves to — the one built
+        for the fingerprint in force — or ``None`` before the first publish."""
+        ...
+
+    def candidate_store(self, fingerprint: IndexFingerprint) -> VectorStorePort:
+        """A store bound to ``fingerprint``'s physical index but unreachable
+        through the alias, to populate and validate a migration candidate."""
+        ...
+
+    def publish_alias(self, physical_name: str) -> None: ...
+
+    def rollback_alias(self, previous_physical_name: str) -> None: ...

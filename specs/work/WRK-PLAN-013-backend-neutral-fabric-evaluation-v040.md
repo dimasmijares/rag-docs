@@ -45,7 +45,7 @@ paridad de recall entre backends está medida; `scripts/verify.ps1` sigue sin re
 
 | Orden | Tarea | Estado | Dependencias | Entrega |
 |---:|---|---|---|---|
-| 1 | WRK-TASK-094 | draft | — | Costuras de store y factoría por backend |
+| 1 | WRK-TASK-094 | completed | — | Costuras de store y factoría por backend |
 | 2 | WRK-TASK-097 | completed | — | Gate público para artefactos Fabric |
 | 3 | WRK-TASK-093 | draft | 086 | Fingerprint vigente expuesto en la API |
 | 4 | WRK-TASK-095 | draft | 094 | Revisión de embeddings fijada |
