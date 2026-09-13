@@ -1,0 +1,95 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "c_recall",
+  "position": {
+    "x": 20,
+    "y": 460,
+    "z": 0,
+    "width": 1240,
+    "height": 240
+  },
+  "visual": {
+    "visualType": "clusteredColumnChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "evaluation_profiles"
+                    }
+                  },
+                  "Property": "profile_id"
+                }
+              },
+              "queryRef": "evaluation_profiles.profile_id",
+              "nativeQueryRef": "profile_id"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "evaluation_profiles"
+                    }
+                  },
+                  "Property": "MRR"
+                }
+              },
+              "queryRef": "evaluation_profiles.MRR",
+              "nativeQueryRef": "MRR"
+            }
+          ]
+        },
+        "Series": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "evaluation_profiles"
+                    }
+                  },
+                  "Property": "vector_backend"
+                }
+              },
+              "queryRef": "evaluation_profiles.vector_backend",
+              "nativeQueryRef": "vector_backend"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'MRR por perfil y backend'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

@@ -1,0 +1,68 @@
+table evaluation_runs
+
+	column run_id
+		dataType: string
+		summarizeBy: none
+		sourceColumn: run_id
+
+	column corpus_version
+		dataType: string
+		summarizeBy: none
+		sourceColumn: corpus_version
+
+	column benchmark_id
+		dataType: string
+		summarizeBy: none
+		sourceColumn: benchmark_id
+
+	column phase
+		dataType: string
+		summarizeBy: none
+		sourceColumn: phase
+
+	column report_schema_version
+		dataType: string
+		summarizeBy: none
+		sourceColumn: report_schema_version
+
+	column source_file
+		dataType: string
+		summarizeBy: none
+		sourceColumn: source_file
+
+	column started_at
+		dataType: string
+		summarizeBy: none
+		sourceColumn: started_at
+
+	column completed_at
+		dataType: string
+		summarizeBy: none
+		sourceColumn: completed_at
+
+	column revision
+		dataType: string
+		summarizeBy: none
+		sourceColumn: revision
+
+	column config_sha256
+		dataType: string
+		summarizeBy: none
+		sourceColumn: config_sha256
+
+	column corpus_manifest_sha256
+		dataType: string
+		summarizeBy: none
+		sourceColumn: corpus_manifest_sha256
+
+	column loaded_at
+		dataType: dateTime
+		summarizeBy: none
+		sourceColumn: loaded_at
+
+	partition evaluation_runs = entity
+		mode: directLake
+		source
+			entityName: evaluation_runs
+			schemaName: dbo
+			expressionSource: DatabaseQuery

@@ -1,0 +1,190 @@
+table evaluation_profiles
+
+	/// Recall medio a 1 de los perfiles filtrados.
+	measure 'Recall@1' = AVERAGE(evaluation_profiles[recall_at_1])
+		formatString: 0.000
+
+	/// Recall medio a 3 de los perfiles filtrados.
+	measure 'Recall@3' = AVERAGE(evaluation_profiles[recall_at_3])
+		formatString: 0.000
+
+	/// Recall medio a 8 de los perfiles filtrados.
+	measure 'Recall@8' = AVERAGE(evaluation_profiles[recall_at_8])
+		formatString: 0.000
+
+	/// Mean reciprocal rank de los perfiles filtrados.
+	measure 'MRR' = AVERAGE(evaluation_profiles[reciprocal_rank])
+		formatString: 0.000
+
+	/// Proporción media de casos superados.
+	measure 'Score medio' = AVERAGE(evaluation_profiles[score])
+		formatString: 0.0%
+
+	/// Latencia de retrieval p50. Solo comparable dentro del mismo vector_backend.
+	measure 'Retrieval p50 (ms)' = AVERAGE(evaluation_profiles[retrieval_p50_ms])
+		formatString: #,0.0
+
+	/// Latencia de retrieval p95. Solo comparable dentro del mismo vector_backend.
+	measure 'Retrieval p95 (ms)' = AVERAGE(evaluation_profiles[retrieval_p95_ms])
+		formatString: #,0.0
+
+	/// Número de perfiles evaluados.
+	measure 'Perfiles' = COUNTROWS(evaluation_profiles)
+		formatString: 0
+
+	column run_id
+		dataType: string
+		summarizeBy: none
+		sourceColumn: run_id
+
+	column corpus_version
+		dataType: string
+		summarizeBy: none
+		sourceColumn: corpus_version
+
+	column profile_id
+		dataType: string
+		summarizeBy: none
+		sourceColumn: profile_id
+
+	column vector_backend
+		dataType: string
+		summarizeBy: none
+		sourceColumn: vector_backend
+
+	column vector_search_mode
+		dataType: string
+		summarizeBy: none
+		sourceColumn: vector_search_mode
+
+	column retrieval_strategy
+		dataType: string
+		summarizeBy: none
+		sourceColumn: retrieval_strategy
+
+	column reranker_model
+		dataType: string
+		summarizeBy: none
+		sourceColumn: reranker_model
+
+	column index_fingerprint_digest
+		dataType: string
+		summarizeBy: none
+		sourceColumn: index_fingerprint_digest
+
+	column embedding_model
+		dataType: string
+		summarizeBy: none
+		sourceColumn: embedding_model
+
+	column embedding_revision
+		dataType: string
+		summarizeBy: none
+		sourceColumn: embedding_revision
+
+	column generator_mode
+		dataType: string
+		summarizeBy: none
+		sourceColumn: generator_mode
+
+	column passed
+		dataType: int64
+		formatString: 0
+		summarizeBy: sum
+		sourceColumn: passed
+
+	column total
+		dataType: int64
+		formatString: 0
+		summarizeBy: sum
+		sourceColumn: total
+
+	column score
+		dataType: double
+		formatString: 0.000
+		summarizeBy: none
+		sourceColumn: score
+
+	column recall_at_1
+		dataType: double
+		formatString: 0.000
+		summarizeBy: none
+		sourceColumn: recall_at_1
+
+	column recall_at_3
+		dataType: double
+		formatString: 0.000
+		summarizeBy: none
+		sourceColumn: recall_at_3
+
+	column recall_at_5
+		dataType: double
+		formatString: 0.000
+		summarizeBy: none
+		sourceColumn: recall_at_5
+
+	column recall_at_8
+		dataType: double
+		formatString: 0.000
+		summarizeBy: none
+		sourceColumn: recall_at_8
+
+	column reciprocal_rank
+		dataType: double
+		formatString: 0.000
+		summarizeBy: none
+		sourceColumn: reciprocal_rank
+
+	column precision_at_1
+		dataType: double
+		formatString: 0.000
+		summarizeBy: none
+		sourceColumn: precision_at_1
+
+	column precision_at_8
+		dataType: double
+		formatString: 0.000
+		summarizeBy: none
+		sourceColumn: precision_at_8
+
+	column retrieval_p50_ms
+		dataType: double
+		formatString: 0.000
+		summarizeBy: none
+		sourceColumn: retrieval_p50_ms
+
+	column retrieval_p95_ms
+		dataType: double
+		formatString: 0.000
+		summarizeBy: none
+		sourceColumn: retrieval_p95_ms
+
+	column total_p50_ms
+		dataType: double
+		formatString: 0.000
+		summarizeBy: none
+		sourceColumn: total_p50_ms
+
+	column total_p95_ms
+		dataType: double
+		formatString: 0.000
+		summarizeBy: none
+		sourceColumn: total_p95_ms
+
+	column indexing_ms
+		dataType: double
+		formatString: 0.000
+		summarizeBy: none
+		sourceColumn: indexing_ms
+
+	column loaded_at
+		dataType: dateTime
+		summarizeBy: none
+		sourceColumn: loaded_at
+
+	partition evaluation_profiles = entity
+		mode: directLake
+		source
+			entityName: evaluation_profiles
+			schemaName: dbo
+			expressionSource: DatabaseQuery

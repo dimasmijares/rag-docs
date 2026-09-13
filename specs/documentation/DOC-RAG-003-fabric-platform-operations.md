@@ -224,6 +224,34 @@ actual). No lleva lakehouse por defecto ni IDs en su definición.
   backend y calcula la paridad de recall. La latencia queda marcada como no comparable.
 - **Experimento DiskANN (G2):** `scripts/diskann_experiment.py`. No es el modo por defecto.
 
+## Informe Power BI de calidad (WRK-TASK-103)
+
+```powershell
+./fabric/deploy_quality_report.ps1   # requiere fab con sesión y las tablas Delta de WRK-TASK-102
+```
+
+- **PBIP versionado:** `fabric/ragdocs_quality.pbip`, `ragdocs_quality.SemanticModel` (TMDL) y
+  `ragdocs_quality.Report` (PBIR).
+  - El modelo usa Direct Lake sobre el SQL analytics endpoint de `ragdocs_eval`, con las tablas
+    `evaluation_profiles` y `evaluation_runs` relacionadas por `run_id`. La conexión se versiona
+    con los marcadores `#{SQL_ENDPOINT_HOST}#` y `#{SQL_ENDPOINT_ID}#`.
+  - El informe referencia el modelo por ruta (`byPath`), válido en Power BI Desktop tras sustituir
+    los marcadores en una copia local.
+- **Despliegue:** `fabric/deploy_quality_report.ps1` resuelve host e id del endpoint con `fab get`
+  y sustituye los marcadores en `_build/quality-deploy/` (ignorado por Git). Importa el modelo, pasa
+  el informe a `byConnection` con el id del modelo resuelto e importa. Por último hace refresh
+  (framing) y valida con `executeQueries` una consulta DAX por backend, `corpus_version` y
+  fingerprint.
+- **Página "Calidad de retrieval":**
+  - slicers de perfil, `vector_backend`, `corpus_version`, fingerprint y fase;
+  - tabla de Recall@1/3/8, MRR y score medio por perfil, backend y fingerprint;
+  - MRR por perfil coloreado por backend.
+- **Página "Latencia por backend":** p95 de retrieval con el backend como eje y tabla p50/p95 por
+  backend y perfil, **sin fila total**. Las medidas de latencia indican en su descripción que solo
+  son comparables dentro del mismo backend.
+- **Medidas:** `Recall@1`, `Recall@3`, `Recall@8`, `MRR`, `Score medio`, `Retrieval p50 (ms)`,
+  `Retrieval p95 (ms)`, `Perfiles`.
+
 ## Desmontaje
 
 Irreversible; lo ejecuta la persona operadora:

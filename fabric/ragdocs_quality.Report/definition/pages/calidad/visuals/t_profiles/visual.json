@@ -1,0 +1,185 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "t_profiles",
+  "position": {
+    "x": 20,
+    "y": 190,
+    "z": 0,
+    "width": 1240,
+    "height": 250
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "evaluation_profiles"
+                    }
+                  },
+                  "Property": "profile_id"
+                }
+              },
+              "queryRef": "evaluation_profiles.profile_id",
+              "nativeQueryRef": "profile_id"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "evaluation_profiles"
+                    }
+                  },
+                  "Property": "vector_backend"
+                }
+              },
+              "queryRef": "evaluation_profiles.vector_backend",
+              "nativeQueryRef": "vector_backend"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "evaluation_profiles"
+                    }
+                  },
+                  "Property": "vector_search_mode"
+                }
+              },
+              "queryRef": "evaluation_profiles.vector_search_mode",
+              "nativeQueryRef": "vector_search_mode"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "evaluation_profiles"
+                    }
+                  },
+                  "Property": "corpus_version"
+                }
+              },
+              "queryRef": "evaluation_profiles.corpus_version",
+              "nativeQueryRef": "corpus_version"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "evaluation_profiles"
+                    }
+                  },
+                  "Property": "index_fingerprint_digest"
+                }
+              },
+              "queryRef": "evaluation_profiles.index_fingerprint_digest",
+              "nativeQueryRef": "index_fingerprint_digest"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "evaluation_profiles"
+                    }
+                  },
+                  "Property": "Recall@1"
+                }
+              },
+              "queryRef": "evaluation_profiles.Recall@1",
+              "nativeQueryRef": "Recall@1"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "evaluation_profiles"
+                    }
+                  },
+                  "Property": "Recall@3"
+                }
+              },
+              "queryRef": "evaluation_profiles.Recall@3",
+              "nativeQueryRef": "Recall@3"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "evaluation_profiles"
+                    }
+                  },
+                  "Property": "Recall@8"
+                }
+              },
+              "queryRef": "evaluation_profiles.Recall@8",
+              "nativeQueryRef": "Recall@8"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "evaluation_profiles"
+                    }
+                  },
+                  "Property": "MRR"
+                }
+              },
+              "queryRef": "evaluation_profiles.MRR",
+              "nativeQueryRef": "MRR"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "evaluation_profiles"
+                    }
+                  },
+                  "Property": "Score medio"
+                }
+              },
+              "queryRef": "evaluation_profiles.Score medio",
+              "nativeQueryRef": "Score medio"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Métricas por perfil, backend y fingerprint'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}
