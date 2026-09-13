@@ -1,12 +1,20 @@
+from dataclasses import asdict
+from pathlib import Path
+
+import httpx
 import pytest
+import yaml
 
 from rag_docs.evaluation import (
     _percentile,
     aggregate_retrieval_metrics,
+    evaluate,
     evaluate_case,
     verify_fingerprint_compatibility,
     verify_gold_corpus_version,
 )
+from rag_docs.indexing import IndexingService
+from tests.fakes import FakeEmbedder, FakeVectorStore
 
 
 def citation(reference: int, path: str) -> dict:
@@ -305,3 +313,108 @@ def test_verify_fingerprint_compatibility_accepts_declared_digest() -> None:
     verify_fingerprint_compatibility(
         {"compatible_fingerprint_digests": ["aaa", "bbb"]}, "bbb"
     )
+
+
+LIVE_FINGERPRINT = IndexingService([], FakeEmbedder(), FakeVectorStore()).fingerprint
+
+
+def _write_evaluation_inputs(tmp_path: Path, compatible_digests: list[str]) -> tuple[Path, Path]:
+    gold = tmp_path / "gold.yaml"
+    gold.write_text(
+        yaml.safe_dump(
+            {
+                "corpus_version": "0.2.0",
+                "cases": [
+                    {
+                        "id": "negative",
+                        "question": "¿Hay algo?",
+                        "expected_status": "insufficient_evidence",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    compatibility = tmp_path / "compatibility.yaml"
+    compatibility.write_text(
+        yaml.safe_dump(
+            {"corpus_version": "0.2.0", "compatible_fingerprint_digests": compatible_digests}
+        ),
+        encoding="utf-8",
+    )
+    return gold, compatibility
+
+
+def _live_api(fingerprint_payload: dict | None, queried: list[str]) -> httpx.MockTransport:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/api/sources":
+            body: dict = {"sources": []}
+            if fingerprint_payload is not None:
+                body["index_fingerprint"] = fingerprint_payload
+            return httpx.Response(200, json=body)
+        queried.append(request.url.path)
+        return httpx.Response(
+            200,
+            json={
+                "answer_status": "insufficient_evidence",
+                "answer": "No hay evidencia suficiente.",
+                "citations": [],
+            },
+        )
+
+    return httpx.MockTransport(handler)
+
+
+def _payload(fingerprint=LIVE_FINGERPRINT) -> dict:
+    return {**asdict(fingerprint), "digest": fingerprint.digest()}
+
+
+def test_evaluate_records_the_live_index_fingerprint_when_compatible(tmp_path: Path) -> None:
+    gold, compatibility = _write_evaluation_inputs(tmp_path, [LIVE_FINGERPRINT.digest()])
+    queried: list[str] = []
+
+    report = evaluate(
+        "http://api",
+        gold,
+        compatibility_path=compatibility,
+        transport=_live_api(_payload(), queried),
+    )
+
+    assert report["index_fingerprint"] == _payload()
+    assert report["index_fingerprint"]["digest"] == LIVE_FINGERPRINT.digest()
+    assert report["passed"] == report["total"] == 1
+    assert queried == ["/api/query"]
+
+
+def test_evaluate_fails_explicitly_before_scoring_against_an_incompatible_index(
+    tmp_path: Path,
+) -> None:
+    gold, compatibility = _write_evaluation_inputs(tmp_path, ["0000000000000000"])
+    queried: list[str] = []
+
+    with pytest.raises(RuntimeError, match="no está declarado compatible"):
+        evaluate(
+            "http://api",
+            gold,
+            compatibility_path=compatibility,
+            transport=_live_api(_payload(), queried),
+        )
+
+    assert queried == []
+
+
+def test_evaluate_rejects_an_api_without_fingerprint_or_with_a_forged_digest(
+    tmp_path: Path,
+) -> None:
+    gold, compatibility = _write_evaluation_inputs(tmp_path, [LIVE_FINGERPRINT.digest()])
+
+    with pytest.raises(RuntimeError, match="no expone index_fingerprint"):
+        evaluate(
+            "http://api", gold, compatibility_path=compatibility, transport=_live_api(None, [])
+        )
+
+    forged = {**_payload(), "chunk_tokens": 999}
+    with pytest.raises(RuntimeError, match="no coincide"):
+        evaluate(
+            "http://api", gold, compatibility_path=compatibility, transport=_live_api(forged, [])
+        )

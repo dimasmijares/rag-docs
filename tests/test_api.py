@@ -6,11 +6,14 @@ from fastapi.testclient import TestClient
 from rag_docs.api import create_app
 from rag_docs.config import SourceDefinition
 from rag_docs.generation import GenerationError
-from rag_docs.indexing import IndexReport
+from rag_docs.indexing import IndexingService, IndexReport
 from rag_docs.query import QueryResult
+from tests.fakes import FakeEmbedder, FakeVectorStore
 
 
 class FakeIndexing:
+    fingerprint = IndexingService([], FakeEmbedder(), FakeVectorStore()).fingerprint
+
     def index(self, source_ids=None):
         return IndexReport(added=1, chunks_written=2)
 
@@ -168,3 +171,25 @@ def test_generator_profiles_can_be_checked_and_activated(tmp_path: Path) -> None
     assert activated.json()["active"] is True
     assert activated.json()["model"] == "model-new"
     assert final.json()["active_profile"] == "remote"
+
+
+def test_sources_expose_the_live_index_fingerprint_additively(tmp_path: Path) -> None:
+    indexing = IndexingService([], FakeEmbedder(), FakeVectorStore(), chunk_tokens=321)
+    container = SimpleNamespace(
+        source_definitions=[SourceDefinition(id="demo", root=tmp_path)],
+        indexing=indexing,
+        query=FakeQuery(),
+    )
+    client = TestClient(create_app(container))
+
+    body = client.get("/api/sources").json()
+
+    expected = indexing.fingerprint
+    assert body["index_fingerprint"]["digest"] == expected.digest()
+    assert body["index_fingerprint"]["chunk_tokens"] == 321
+    assert {key: value for key, value in body["index_fingerprint"].items() if key != "digest"} == {
+        field: getattr(expected, field) for field in expected.__dataclass_fields__
+    }
+    # Backward compatibility: the pre-existing contract is untouched.
+    assert set(body) == {"sources", "index_fingerprint"}
+    assert set(body["sources"][0]) == {"id", "type", "root", "available", "include", "exclude"}

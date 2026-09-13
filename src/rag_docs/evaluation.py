@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
 from time import perf_counter
@@ -11,6 +12,7 @@ from typing import Any
 import httpx
 import yaml
 
+from rag_docs.contracts import IndexFingerprint
 from rag_docs.language import normalized_contains, text_matches_language
 
 DEFAULT_CORPUS_COMPATIBILITY = Path("evaluation/corpus-compatibility.yaml")
@@ -59,6 +61,33 @@ def verify_fingerprint_compatibility(
             "configuración: no se ejecuta el benchmark/evaluación contra una combinación "
             "no verificada."
         )
+
+
+def live_index_fingerprint(client: httpx.Client) -> dict[str, Any]:
+    """The ``IndexFingerprint`` the running API is actually serving
+    (``GET /api/sources``, ``WRK-TASK-093``), in the same shape
+    ``benchmark._fingerprint_payload`` records. The digest is recomputed from
+    the fields, so a payload whose declared digest does not match them fails
+    explicitly instead of being trusted."""
+    response = client.get("/api/sources")
+    response.raise_for_status()
+    payload = response.json().get("index_fingerprint")
+    if not payload:
+        raise RuntimeError(
+            "La API no expone index_fingerprint en GET /api/sources; no se puede "
+            "verificar la compatibilidad del índice vigente con el corpus."
+        )
+    fields = {key: value for key, value in payload.items() if key != "digest"}
+    try:
+        fingerprint = IndexFingerprint(**fields)
+    except TypeError as exc:
+        raise RuntimeError(f"index_fingerprint de la API no es válido: {exc}") from exc
+    if payload.get("digest") != fingerprint.digest():
+        raise RuntimeError(
+            f"El digest declarado por la API ({payload.get('digest')}) no coincide con "
+            f"el calculado a partir de sus campos ({fingerprint.digest()})."
+        )
+    return {**asdict(fingerprint), "digest": fingerprint.digest()}
 
 
 def _percentile(values: list[float], percentile: float) -> float:
@@ -291,12 +320,17 @@ def evaluate(
     gold_path: Path,
     *,
     compatibility_path: Path = DEFAULT_CORPUS_COMPATIBILITY,
+    transport: httpx.BaseTransport | None = None,
 ) -> dict[str, Any]:
     gold = yaml.safe_load(gold_path.read_text(encoding="utf-8"))
     compatibility = load_corpus_compatibility(compatibility_path)
     verify_gold_corpus_version(gold, compatibility)
     results: list[dict[str, Any]] = []
-    with httpx.Client(base_url=base_url, timeout=240) as client:
+    with httpx.Client(base_url=base_url, timeout=240, transport=transport) as client:
+        # Before scoring any case: an index incompatible with this corpus fails
+        # explicitly instead of producing low metrics (RULE-004, ADR-RAG-011).
+        index_fingerprint = live_index_fingerprint(client)
+        verify_fingerprint_compatibility(compatibility, index_fingerprint["digest"])
         for case in gold["cases"]:
             started = perf_counter()
             try:
@@ -339,6 +373,7 @@ def evaluate(
         "timestamp": datetime.now(UTC).isoformat(),
         "gold_set": str(gold_path),
         "corpus_version": gold.get("corpus_version"),
+        "index_fingerprint": index_fingerprint,
         "config_snapshot": {
             "model": next(iter(observed_models))[0] if observed_models else None,
             "embedding_model": next(iter(observed_models))[1] if observed_models else None,

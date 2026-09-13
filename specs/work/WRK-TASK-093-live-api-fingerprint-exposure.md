@@ -3,9 +3,9 @@ id: WRK-TASK-093
 type: spec
 layer: work-task
 scope: ephemeral
-status: draft
+status: completed
 confidence: medium
-version: 0.1.0
+version: 0.2.0
 created: 2026-09-12
 updated: 2026-09-13
 owner: rag-docs-team
@@ -42,24 +42,46 @@ descubra que necesita un digest adicional ya cubierto por la política aditiva e
 
 ## Acceptance Criteria
 
-- [ ] El servicio expone su `IndexFingerprint` vigente (los diez campos de valor, no sólo
+- [x] El servicio expone su `IndexFingerprint` vigente (los diez campos de valor, no sólo
       `embedding_model`) a través de un endpoint HTTP existente o nuevo, documentado como cambio de
       contrato de API (versión de API o nota de compatibilidad, según convención del proyecto).
-- [ ] `evaluate()` consume ese campo y registra `index_fingerprint` (objeto completo + `digest()`)
+- [x] `evaluate()` consume ese campo y registra `index_fingerprint` (objeto completo + `digest()`)
       en el informe de evaluación, en el mismo formato que `_fingerprint_payload` usa en
       `benchmark.py`, en vez de (o junto a) `config_snapshot`.
-- [ ] `evaluate()` llama a `verify_fingerprint_compatibility` contra
+- [x] `evaluate()` llama a `verify_fingerprint_compatibility` contra
       `evaluation/corpus-compatibility.yaml` antes de puntuar los casos; una API cuyo fingerprint
       vigente no esté en `compatible_fingerprint_digests` falla de forma explícita, no produce
       métricas bajas.
-- [ ] Un cliente HTTP existente que no pida el campo nuevo (compatibilidad hacia atrás del
+- [x] Un cliente HTTP existente que no pida el campo nuevo (compatibilidad hacia atrás del
       contrato) sigue recibiendo la misma respuesta que antes más el campo añadido; ningún campo
       existente cambia de nombre ni de significado.
-- [ ] Tests cubren: el endpoint devuelve el fingerprint vigente y coincide con
+- [x] Tests cubren: el endpoint devuelve el fingerprint vigente y coincide con
       `IndexingService.fingerprint`; `evaluate()` contra una API con fingerprint incompatible falla
       explícito; `evaluate()` contra una API compatible registra `index_fingerprint` y su `digest()`
       coincide con el declarado.
 
 ## Evidence
 
-(pendiente de ejecución)
+- Endpoint elegido: `GET /api/sources` (`src/rag_docs/api.py`) añade `index_fingerprint` con los
+  campos de `IndexingService.fingerprint` y su `digest()`, en el mismo formato que
+  `benchmark._fingerprint_payload`. Cambio aditivo documentado en la descripción OpenAPI del endpoint
+  (la convención del proyecto versiona el contrato con `__version__` en OpenAPI): `sources` y sus
+  campos no cambian; `POST /api/query` no cambia.
+- `src/rag_docs/evaluation.py`: `live_index_fingerprint(client)` lee el campo, reconstruye
+  `IndexFingerprint` y recalcula el digest (un payload sin el campo, con campos inválidos o con un
+  digest que no casa con sus campos falla con `RuntimeError`). `evaluate()` lo llama y ejecuta
+  `verify_fingerprint_compatibility` contra `corpus-compatibility.yaml` **antes** de enviar ningún
+  caso, y registra `index_fingerprint` en el informe junto a `config_snapshot`, que se conserva.
+  `evaluate()` acepta `transport` opcional (`httpx`) para pruebas; la CLI no cambia.
+- Tests: `test_sources_expose_the_live_index_fingerprint_additively` (coincide con
+  `IndexingService.fingerprint` y el contrato previo de `sources` queda intacto);
+  `test_evaluate_records_the_live_index_fingerprint_when_compatible` (digest registrado igual al
+  declarado); `test_evaluate_fails_explicitly_before_scoring_against_an_incompatible_index` (no se
+  envía ninguna consulta); `test_evaluate_rejects_an_api_without_fingerprint_or_with_a_forged_digest`.
+- Hallazgo operativo, sin cambiar el manifiesto: la app construye hoy el fingerprint con
+  `embedding_revision=None` (digest `8270a45e87e30cc7`), que no está en
+  `compatible_fingerprint_digests` (el benchmark fija la revisión: `724f6786a9170f8b`). Por tanto
+  `rag-docs-eval` contra la API real falla ahora de forma explícita, que es lo que exige esta tarea.
+  No se añade el digest sin revisión fijada porque no es reproducible; `WRK-TASK-095` fija la revisión
+  en configuración para que app y benchmark coincidan.
+- `scripts/verify.ps1` en verde.
